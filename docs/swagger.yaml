@@ -1,0 +1,233 @@
+basePath: /api/v1
+definitions:
+  models.AuthResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        $ref: '#/definitions/models.User'
+    type: object
+  models.LoginRequest:
+    properties:
+      password:
+        example: "123456"
+        minLength: 6
+        type: string
+      username:
+        example: joaosilva
+        minLength: 2
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  models.RegisterRequest:
+    properties:
+      email:
+        example: joao@exemplo.com
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: João Silva
+        minLength: 2
+        type: string
+      password:
+        example: "123456"
+        minLength: 6
+        type: string
+      role:
+        enum:
+        - client
+        - accountant
+        - admin
+        example: user
+        type: string
+      username:
+        example: joaosilva
+        minLength: 2
+        type: string
+    required:
+    - email
+    - is_active
+    - name
+    - password
+    - role
+    - username
+    type: object
+  models.SuccessResponse:
+    properties:
+      data: {}
+      message:
+        example: Operação realizada com sucesso
+        type: string
+      success:
+        example: true
+        type: boolean
+    type: object
+  models.User:
+    properties:
+      created_at:
+        description: data de criação do utilizador
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      email:
+        example: joao@exemplo.com
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_active:
+        description: indica se tem permissão para aceder à aplicação, pode estar bloqueado
+        example: true
+        type: boolean
+      name:
+        example: João Silva
+        type: string
+      role:
+        description: cliente - 0, contabilista (gestor) - 1, admin - 2
+        example: user
+        type: string
+      updated_at:
+        description: data da última atualização do utilizador
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      username:
+        description: nome de utilizador único
+        example: joaosilva
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Sistema de gestão contabilística
+  title: RV Contabilidade API
+  version: "1.0"
+paths:
+  /admin/users:
+    get:
+      consumes:
+      - application/json
+      description: Lista todos os utilizadores (só admins - requer token de admin
+        no header Authorization)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar utilizadores
+      tags:
+      - admin
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login com username e password (não precisa de token)
+      parameters:
+      - description: 'Dados: username e password'
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AuthResponse'
+      summary: Entrar
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Remove token do lado do cliente (logout simples - requer token)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Logout do utilizador
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Regista novo utilizador (não precisa de token)
+      parameters:
+      - description: 'Dados: email, username, password, name, role, is_active'
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.AuthResponse'
+      summary: Criar conta
+      tags:
+      - auth
+  /info:
+    get:
+      consumes:
+      - application/json
+      description: Como usar a API e autenticação
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Informações da API
+      tags:
+      - info
+  /profile:
+    get:
+      consumes:
+      - application/json
+      description: Obtém dados do utilizador logado (requer token no header Authorization)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Meu perfil
+      tags:
+      - user
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

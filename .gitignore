@@ -1,0 +1,25 @@
+# Go stuff
+/bin/
+/build/
+*.exe
+*.out
+*.test
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Dependências Go
+go.sum
+vendor/
+
+# Ficheiros de ambiente
+.env
+
+# Uploads locais
+/uploads/
