@@ -12,10 +12,10 @@ import (
 
 // @title           RV Contabilidade API
 // @version         1.0
-// @description     Sistema de gestão contabilística
+// @description     Sistema de gestão contabilística com aprovação de clientes
 
 // @host      localhost:8080
-// @BasePath  /api/v1
+// @BasePath  /api
 
 // @securityDefinitions.apikey BearerAuth
 // @in header
@@ -23,7 +23,7 @@ import (
 
 func main() {
     // Inicializar BD
-    config.InitDB()
+    config.ConnectDatabase()
 
     // Configurar rotas
     router := routes.SetupRoutes()

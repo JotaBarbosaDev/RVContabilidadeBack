@@ -1,5 +1,23 @@
-basePath: /api/v1
+basePath: /api
 definitions:
+  models.ApprovalRequestDTO:
+    properties:
+      request_id:
+        example: 1
+        type: integer
+      review_notes:
+        example: Documentação em ordem
+        type: string
+      status:
+        enum:
+        - approved
+        - rejected
+        example: approved
+        type: string
+    required:
+    - request_id
+    - status
+    type: object
   models.AuthResponse:
     properties:
       token:
@@ -8,6 +26,43 @@ definitions:
       user:
         $ref: '#/definitions/models.User'
     type: object
+  models.Company:
+    properties:
+      address:
+        type: string
+      cae:
+        type: string
+      city:
+        type: string
+      company_name:
+        type: string
+      country:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      legal_form:
+        type: string
+      nipc:
+        type: string
+      postal_code:
+        type: string
+      registration_date:
+        type: string
+      share_capital:
+        type: number
+      status:
+        type: string
+      trade_name:
+        type: string
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/models.User'
+      user_id:
+        type: integer
+    type: object
   models.LoginRequest:
     properties:
       password:
@@ -15,8 +70,7 @@ definitions:
         minLength: 6
         type: string
       username:
-        example: joaosilva
-        minLength: 2
+        example: joao.silva
         type: string
     required:
     - password
@@ -27,34 +81,144 @@ definitions:
       email:
         example: joao@exemplo.com
         type: string
-      is_active:
-        example: true
-        type: boolean
       name:
         example: João Silva
         minLength: 2
         type: string
+      nif:
+        example: "123456789"
+        type: string
       password:
         example: "123456"
         minLength: 6
+        type: string
+      phone:
+        example: "912345678"
         type: string
       role:
         enum:
         - client
         - accountant
         - admin
-        example: user
+        example: client
+        type: string
+      status:
+        enum:
+        - pending
+        - approved
+        - rejected
+        - blocked
+        example: pending
         type: string
       username:
-        example: joaosilva
-        minLength: 2
+        example: joao.silva
         type: string
     required:
     - email
-    - is_active
     - name
+    - nif
     - password
+    - phone
     - role
+    - status
+    - username
+    type: object
+  models.RegistrationRequest:
+    properties:
+      approval_token:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      request_data:
+        type: string
+      review_notes:
+        type: string
+      reviewed_at:
+        type: string
+      reviewed_by:
+        type: integer
+      reviewed_by_user:
+        $ref: '#/definitions/models.User'
+      status:
+        type: string
+      submitted_at:
+        type: string
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/models.User'
+      user_id:
+        type: integer
+    type: object
+  models.RegistrationRequestDTO:
+    properties:
+      address:
+        example: Rua das Flores, 123
+        type: string
+      cae:
+        example: "69200"
+        type: string
+      city:
+        example: Lisboa
+        type: string
+      company_name:
+        description: Dados da Empresa
+        example: Silva & Associados Lda
+        type: string
+      country:
+        example: Portugal
+        type: string
+      email:
+        example: joao@exemplo.com
+        type: string
+      legal_form:
+        example: Sociedade por Quotas
+        type: string
+      name:
+        example: João Silva
+        type: string
+      nif:
+        example: "123456789"
+        type: string
+      nipc:
+        example: "123456789"
+        type: string
+      password:
+        example: password123
+        minLength: 6
+        type: string
+      phone:
+        example: "912345678"
+        type: string
+      postal_code:
+        example: 1000-001
+        type: string
+      registration_date:
+        example: "2024-01-15"
+        type: string
+      share_capital:
+        example: 5000
+        type: number
+      trade_name:
+        example: Silva Consultoria
+        type: string
+      username:
+        description: Dados Pessoais
+        example: joao.silva
+        type: string
+    required:
+    - address
+    - city
+    - company_name
+    - email
+    - name
+    - nif
+    - nipc
+    - password
+    - phone
+    - postal_code
     - username
     type: object
   models.SuccessResponse:
@@ -67,10 +231,53 @@ definitions:
         example: true
         type: boolean
     type: object
+  models.UpdateCompanyDTO:
+    properties:
+      address:
+        example: Rua das Flores, 123
+        type: string
+      city:
+        example: Lisboa
+        type: string
+      postal_code:
+        example: 1000-001
+        type: string
+      trade_name:
+        example: Silva Consultoria
+        type: string
+    type: object
+  models.UpdateProfileDTO:
+    properties:
+      name:
+        example: João Silva
+        type: string
+      phone:
+        example: "912345678"
+        type: string
+    type: object
+  models.UpdateUserStatusDTO:
+    properties:
+      notes:
+        example: Motivo da alteração
+        type: string
+      status:
+        enum:
+        - approved
+        - rejected
+        - blocked
+        example: approved
+        type: string
+    required:
+    - status
+    type: object
   models.User:
     properties:
+      companies:
+        description: Relacionamentos
+        items:
+          $ref: '#/definitions/models.Company'
+        type: array
       created_at:
-        description: data de criação do utilizador
         example: "2023-01-01T00:00:00Z"
         type: string
       email:
@@ -79,39 +286,54 @@ definitions:
       id:
         example: 1
         type: integer
-      is_active:
-        description: indica se tem permissão para aceder à aplicação, pode estar bloqueado
-        example: true
-        type: boolean
       name:
         example: João Silva
         type: string
+      nif:
+        description: Chave única para detetar duplicados
+        example: "123456789"
+        type: string
+      phone:
+        example: "912345678"
+        type: string
+      requests:
+        items:
+          $ref: '#/definitions/models.RegistrationRequest'
+        type: array
       role:
-        description: cliente - 0, contabilista (gestor) - 1, admin - 2
-        example: user
+        description: client, accountant, admin
+        example: client
+        type: string
+      status:
+        description: pending, approved, rejected, blocked
+        example: pending
         type: string
       updated_at:
-        description: data da última atualização do utilizador
         example: "2023-01-01T00:00:00Z"
         type: string
       username:
-        description: nome de utilizador único
-        example: joaosilva
+        example: joao.silva
         type: string
     type: object
 host: localhost:8080
 info:
   contact: {}
-  description: Sistema de gestão contabilística
+  description: Sistema de gestão contabilística com aprovação de clientes
   title: RV Contabilidade API
   version: "1.0"
 paths:
-  /admin/users:
-    get:
+  /admin/approve-request:
+    post:
       consumes:
       - application/json
-      description: Lista todos os utilizadores (só admins - requer token de admin
-        no header Authorization)
+      description: Aprova ou rejeita uma solicitação de registo (apenas contabilistas/admin)
+      parameters:
+      - description: Dados de aprovação
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.ApprovalRequestDTO'
       produces:
       - application/json
       responses:
@@ -121,16 +343,142 @@ paths:
             $ref: '#/definitions/models.SuccessResponse'
       security:
       - BearerAuth: []
-      summary: Listar utilizadores
+      summary: Aprovar/rejeitar solicitação
+      tags:
+      - admin
+  /admin/pending-requests:
+    get:
+      consumes:
+      - application/json
+      description: Lista todas as solicitações de registo pendentes (apenas contabilistas/admin)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar solicitações pendentes
+      tags:
+      - admin
+  /admin/requests:
+    get:
+      consumes:
+      - application/json
+      description: Lista todas as solicitações (apenas contabilistas/admin)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Histórico de solicitações
+      tags:
+      - admin
+  /admin/requests/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Obtém detalhes completos de uma solicitação específica
+      parameters:
+      - description: ID da solicitação
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Detalhes de uma solicitação
+      tags:
+      - admin
+  /admin/users:
+    get:
+      consumes:
+      - application/json
+      description: Lista todos os utilizadores do sistema (apenas admin/contabilista)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar todos os utilizadores
+      tags:
+      - admin
+  /admin/users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Obtém detalhes completos de um utilizador
+      parameters:
+      - description: ID do utilizador
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Detalhes de um utilizador
+      tags:
+      - admin
+  /admin/users/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Bloqueia/desbloqueia utilizador (apenas admin)
+      parameters:
+      - description: ID do utilizador
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Novo status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateUserStatusDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Alterar status de utilizador
       tags:
       - admin
   /auth/login:
     post:
       consumes:
       - application/json
-      description: Login com username e password (não precisa de token)
+      description: Login com username e password
       parameters:
-      - description: 'Dados: username e password'
+      - description: Username e password
         in: body
         name: credentials
         required: true
@@ -150,7 +498,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Remove token do lado do cliente (logout simples - requer token)
+      description: Remove token do lado do cliente
       produces:
       - application/json
       responses:
@@ -158,12 +506,6 @@ paths:
           description: OK
           schema:
             additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
             type: object
       security:
       - BearerAuth: []
@@ -174,9 +516,31 @@ paths:
     post:
       consumes:
       - application/json
-      description: Regista novo utilizador (não precisa de token)
+      description: Cria uma nova solicitação de registo para aprovação da contabilista
       parameters:
-      - description: 'Dados: email, username, password, name, role, is_active'
+      - description: Dados de registo completos
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RegistrationRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      summary: Registo de novo cliente
+      tags:
+      - auth
+  /auth/register-direct:
+    post:
+      consumes:
+      - application/json
+      description: Regista novo utilizador diretamente (para uso interno)
+      parameters:
+      - description: Dados de registo
         in: body
         name: user
         required: true
@@ -189,9 +553,106 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/models.AuthResponse'
-      summary: Criar conta
+      summary: Criar conta diretamente
       tags:
       - auth
+  /client/company:
+    get:
+      consumes:
+      - application/json
+      description: Obtém dados da empresa do cliente logado
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Dados da empresa do cliente
+      tags:
+      - client
+    put:
+      consumes:
+      - application/json
+      description: Atualiza dados da empresa do cliente (campos limitados)
+      parameters:
+      - description: Dados a atualizar
+        in: body
+        name: company
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateCompanyDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar dados da empresa
+      tags:
+      - client
+  /client/profile:
+    get:
+      consumes:
+      - application/json
+      description: Obtém perfil do cliente logado
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Perfil do cliente
+      tags:
+      - client
+    put:
+      consumes:
+      - application/json
+      description: Atualiza dados pessoais do cliente
+      parameters:
+      - description: Dados a atualizar
+        in: body
+        name: profile
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateProfileDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar perfil do cliente
+      tags:
+      - client
+  /client/requests:
+    get:
+      consumes:
+      - application/json
+      description: Lista todas as solicitações do cliente logado
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Histórico de solicitações do cliente
+      tags:
+      - client
   /info:
     get:
       consumes:

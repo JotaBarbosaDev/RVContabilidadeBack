@@ -15,14 +15,14 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/admin/users": {
-            "get": {
+        "/admin/approve-request": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Lista todos os utilizadores (só admins - requer token de admin no header Authorization)",
+                "description": "Aprova ou rejeita uma solicitação de registo (apenas contabilistas/admin)",
                 "consumes": [
                     "application/json"
                 ],
@@ -32,7 +32,222 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Listar utilizadores",
+                "summary": "Aprovar/rejeitar solicitação",
+                "parameters": [
+                    {
+                        "description": "Dados de aprovação",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ApprovalRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/pending-requests": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lista todas as solicitações de registo pendentes (apenas contabilistas/admin)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Listar solicitações pendentes",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/requests": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lista todas as solicitações (apenas contabilistas/admin)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Histórico de solicitações",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/requests/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Obtém detalhes completos de uma solicitação específica",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Detalhes de uma solicitação",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID da solicitação",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lista todos os utilizadores do sistema (apenas admin/contabilista)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Listar todos os utilizadores",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Obtém detalhes completos de um utilizador",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Detalhes de um utilizador",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID do utilizador",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{id}/status": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Bloqueia/desbloqueia utilizador (apenas admin)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Alterar status de utilizador",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID do utilizador",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Novo status",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateUserStatusDTO"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -45,7 +260,7 @@ const docTemplate = `{
         },
         "/auth/login": {
             "post": {
-                "description": "Login com username e password (não precisa de token)",
+                "description": "Login com username e password",
                 "consumes": [
                     "application/json"
                 ],
@@ -58,7 +273,7 @@ const docTemplate = `{
                 "summary": "Entrar",
                 "parameters": [
                     {
-                        "description": "Dados: username e password",
+                        "description": "Username e password",
                         "name": "credentials",
                         "in": "body",
                         "required": true,
@@ -84,7 +299,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Remove token do lado do cliente (logout simples - requer token)",
+                "description": "Remove token do lado do cliente",
                 "consumes": [
                     "application/json"
                 ],
@@ -102,22 +317,13 @@ const docTemplate = `{
                             "type": "object",
                             "additionalProperties": true
                         }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
                     }
                 }
             }
         },
         "/auth/register": {
             "post": {
-                "description": "Regista novo utilizador (não precisa de token)",
+                "description": "Cria uma nova solicitação de registo para aprovação da contabilista",
                 "consumes": [
                     "application/json"
                 ],
@@ -127,10 +333,44 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Criar conta",
+                "summary": "Registo de novo cliente",
                 "parameters": [
                     {
-                        "description": "Dados: email, username, password, name, role, is_active",
+                        "description": "Dados de registo completos",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RegistrationRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register-direct": {
+            "post": {
+                "description": "Regista novo utilizador diretamente (para uso interno)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Criar conta diretamente",
+                "parameters": [
+                    {
+                        "description": "Dados de registo",
                         "name": "user",
                         "in": "body",
                         "required": true,
@@ -144,6 +384,164 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/models.AuthResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/client/company": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Obtém dados da empresa do cliente logado",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "client"
+                ],
+                "summary": "Dados da empresa do cliente",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Atualiza dados da empresa do cliente (campos limitados)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "client"
+                ],
+                "summary": "Atualizar dados da empresa",
+                "parameters": [
+                    {
+                        "description": "Dados a atualizar",
+                        "name": "company",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateCompanyDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/client/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Obtém perfil do cliente logado",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "client"
+                ],
+                "summary": "Perfil do cliente",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Atualiza dados pessoais do cliente",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "client"
+                ],
+                "summary": "Atualizar perfil do cliente",
+                "parameters": [
+                    {
+                        "description": "Dados a atualizar",
+                        "name": "profile",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateProfileDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/client/requests": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lista todas as solicitações do cliente logado",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "client"
+                ],
+                "summary": "Histórico de solicitações do cliente",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
                         }
                     }
                 }
@@ -203,6 +601,31 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.ApprovalRequestDTO": {
+            "type": "object",
+            "required": [
+                "request_id",
+                "status"
+            ],
+            "properties": {
+                "request_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "review_notes": {
+                    "type": "string",
+                    "example": "Documentação em ordem"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "approved",
+                        "rejected"
+                    ],
+                    "example": "approved"
+                }
+            }
+        },
         "models.AuthResponse": {
             "type": "object",
             "properties": {
@@ -212,6 +635,62 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/models.User"
+                }
+            }
+        },
+        "models.Company": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "cae": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "company_name": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "legal_form": {
+                    "type": "string"
+                },
+                "nipc": {
+                    "type": "string"
+                },
+                "postal_code": {
+                    "type": "string"
+                },
+                "registration_date": {
+                    "type": "string"
+                },
+                "share_capital": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "trade_name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/models.User"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -229,8 +708,7 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string",
-                    "minLength": 2,
-                    "example": "joaosilva"
+                    "example": "joao.silva"
                 }
             }
         },
@@ -238,10 +716,12 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "email",
-                "is_active",
                 "name",
+                "nif",
                 "password",
+                "phone",
                 "role",
+                "status",
                 "username"
             ],
             "properties": {
@@ -249,19 +729,23 @@ const docTemplate = `{
                     "type": "string",
                     "example": "joao@exemplo.com"
                 },
-                "is_active": {
-                    "type": "boolean",
-                    "example": true
-                },
                 "name": {
                     "type": "string",
                     "minLength": 2,
                     "example": "João Silva"
                 },
+                "nif": {
+                    "type": "string",
+                    "example": "123456789"
+                },
                 "password": {
                     "type": "string",
                     "minLength": 6,
                     "example": "123456"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "912345678"
                 },
                 "role": {
                     "type": "string",
@@ -270,12 +754,154 @@ const docTemplate = `{
                         "accountant",
                         "admin"
                     ],
-                    "example": "user"
+                    "example": "client"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "pending",
+                        "approved",
+                        "rejected",
+                        "blocked"
+                    ],
+                    "example": "pending"
                 },
                 "username": {
                     "type": "string",
-                    "minLength": 2,
-                    "example": "joaosilva"
+                    "example": "joao.silva"
+                }
+            }
+        },
+        "models.RegistrationRequest": {
+            "type": "object",
+            "properties": {
+                "approval_token": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "request_data": {
+                    "type": "string"
+                },
+                "review_notes": {
+                    "type": "string"
+                },
+                "reviewed_at": {
+                    "type": "string"
+                },
+                "reviewed_by": {
+                    "type": "integer"
+                },
+                "reviewed_by_user": {
+                    "$ref": "#/definitions/models.User"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "submitted_at": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/models.User"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.RegistrationRequestDTO": {
+            "type": "object",
+            "required": [
+                "address",
+                "city",
+                "company_name",
+                "email",
+                "name",
+                "nif",
+                "nipc",
+                "password",
+                "phone",
+                "postal_code",
+                "username"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "Rua das Flores, 123"
+                },
+                "cae": {
+                    "type": "string",
+                    "example": "69200"
+                },
+                "city": {
+                    "type": "string",
+                    "example": "Lisboa"
+                },
+                "company_name": {
+                    "description": "Dados da Empresa",
+                    "type": "string",
+                    "example": "Silva \u0026 Associados Lda"
+                },
+                "country": {
+                    "type": "string",
+                    "example": "Portugal"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "joao@exemplo.com"
+                },
+                "legal_form": {
+                    "type": "string",
+                    "example": "Sociedade por Quotas"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "João Silva"
+                },
+                "nif": {
+                    "type": "string",
+                    "example": "123456789"
+                },
+                "nipc": {
+                    "type": "string",
+                    "example": "123456789"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "example": "password123"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "912345678"
+                },
+                "postal_code": {
+                    "type": "string",
+                    "example": "1000-001"
+                },
+                "registration_date": {
+                    "type": "string",
+                    "example": "2024-01-15"
+                },
+                "share_capital": {
+                    "type": "number",
+                    "example": 5000
+                },
+                "trade_name": {
+                    "type": "string",
+                    "example": "Silva Consultoria"
+                },
+                "username": {
+                    "description": "Dados Pessoais",
+                    "type": "string",
+                    "example": "joao.silva"
                 }
             }
         },
@@ -293,11 +919,72 @@ const docTemplate = `{
                 }
             }
         },
+        "models.UpdateCompanyDTO": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "Rua das Flores, 123"
+                },
+                "city": {
+                    "type": "string",
+                    "example": "Lisboa"
+                },
+                "postal_code": {
+                    "type": "string",
+                    "example": "1000-001"
+                },
+                "trade_name": {
+                    "type": "string",
+                    "example": "Silva Consultoria"
+                }
+            }
+        },
+        "models.UpdateProfileDTO": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "João Silva"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "912345678"
+                }
+            }
+        },
+        "models.UpdateUserStatusDTO": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "notes": {
+                    "type": "string",
+                    "example": "Motivo da alteração"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "approved",
+                        "rejected",
+                        "blocked"
+                    ],
+                    "example": "approved"
+                }
+            }
+        },
         "models.User": {
             "type": "object",
             "properties": {
+                "companies": {
+                    "description": "Relacionamentos",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Company"
+                    }
+                },
                 "created_at": {
-                    "description": "data de criação do utilizador",
                     "type": "string",
                     "example": "2023-01-01T00:00:00Z"
                 },
@@ -309,29 +996,42 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
-                "is_active": {
-                    "description": "indica se tem permissão para aceder à aplicação, pode estar bloqueado",
-                    "type": "boolean",
-                    "example": true
-                },
                 "name": {
                     "type": "string",
                     "example": "João Silva"
                 },
-                "role": {
-                    "description": "cliente - 0, contabilista (gestor) - 1, admin - 2",
+                "nif": {
+                    "description": "Chave única para detetar duplicados",
                     "type": "string",
-                    "example": "user"
+                    "example": "123456789"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "912345678"
+                },
+                "requests": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.RegistrationRequest"
+                    }
+                },
+                "role": {
+                    "description": "client, accountant, admin",
+                    "type": "string",
+                    "example": "client"
+                },
+                "status": {
+                    "description": "pending, approved, rejected, blocked",
+                    "type": "string",
+                    "example": "pending"
                 },
                 "updated_at": {
-                    "description": "data da última atualização do utilizador",
                     "type": "string",
                     "example": "2023-01-01T00:00:00Z"
                 },
                 "username": {
-                    "description": "nome de utilizador único",
                     "type": "string",
-                    "example": "joaosilva"
+                    "example": "joao.silva"
                 }
             }
         }
@@ -349,10 +1049,10 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8080",
-	BasePath:         "/api/v1",
+	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "RV Contabilidade API",
-	Description:      "Sistema de gestão contabilística",
+	Description:      "Sistema de gestão contabilística com aprovação de clientes",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

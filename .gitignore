@@ -5,6 +5,11 @@
 *.out
 *.test
 
+# Binários gerados
+RVContabilidadeBack
+rvcontabilidade
+main
+
 # IDEs
 .vscode/
 .idea/

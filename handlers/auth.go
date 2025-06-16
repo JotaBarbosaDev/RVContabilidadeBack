@@ -4,40 +4,173 @@ import (
 	"RVContabilidadeBack/config"
 	"RVContabilidadeBack/models"
 	"RVContabilidadeBack/utils"
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Register godoc
-// @Summary      Criar conta
-// @Description  Regista novo utilizador (não precisa de token)
+// RegisterClient godoc
+// @Summary      Registo de novo cliente
+// @Description  Cria uma nova solicitação de registo para aprovação da contabilista
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        user  body      models.RegisterRequest  true  "Dados: email, username, password, name, role, is_active"
-// @Success      201   {object}  models.AuthResponse
+// @Param        request  body      models.RegistrationRequestDTO  true  "Dados de registo completos"
+// @Success      201      {object}  models.SuccessResponse
 // @Router       /auth/register [post]
+func RegisterClient(c *gin.Context) {
+	var req models.RegistrationRequestDTO
+	
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Success: false,
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	// Verificar se já existe utilizador com este NIF
+	var existingUser models.User
+	userExists := config.DB.Where("nif = ?", req.NIF).First(&existingUser).Error == nil
+	
+	var user models.User
+	
+	if userExists {
+		// Utilizador já existe, verificar status
+		switch existingUser.Status {
+		case string(models.StatusApproved):
+			c.JSON(http.StatusConflict, models.ErrorResponse{
+				Success: false,
+				Error:   "Já tem uma conta aprovada com este NIF. Faça login.",
+			})
+			return
+		case string(models.StatusPending):
+			c.JSON(http.StatusConflict, models.ErrorResponse{
+				Success: false,
+				Error:   "Já tem uma solicitação pendente com este NIF. Aguarde aprovação.",
+			})
+			return
+		case string(models.StatusRejected):
+			// Pode submeter nova solicitação
+			user = existingUser
+		}
+	} else {
+		// Verificar username único
+		if config.DB.Where("username = ?", req.Username).First(&models.User{}).Error == nil {
+			c.JSON(http.StatusConflict, models.ErrorResponse{
+				Success: false,
+				Error:   "Username já está em uso.",
+			})
+			return
+		}
+
+		// Verificar email único
+		if config.DB.Where("email = ?", req.Email).First(&models.User{}).Error == nil {
+			c.JSON(http.StatusConflict, models.ErrorResponse{
+				Success: false,
+				Error:   "Email já está em uso.",
+			})
+			return
+		}
+
+		// Criar novo utilizador
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Success: false,
+				Error:   "Erro ao processar password",
+			})
+			return
+		}
+
+		user = models.User{
+			Username: req.Username,
+			Name:     req.Name,
+			Email:    req.Email,
+			Phone:    req.Phone,
+			NIF:      req.NIF,
+			Password: string(hashedPassword),
+			Role:     "client",
+			Status:   string(models.StatusPending),
+		}
+
+		if err := config.DB.Create(&user).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Success: false,
+				Error:   "Erro ao criar utilizador",
+			})
+			return
+		}
+	}
+
+	// Converter request para JSON
+	requestDataJSON, _ := json.Marshal(req)
+
+	// Criar solicitação de registo
+	registrationRequest := models.RegistrationRequest{
+		UserID:        user.ID,
+		RequestData:   string(requestDataJSON),
+		Status:        "pending",
+		ApprovalToken: utils.GenerateRandomToken(),
+	}
+
+	if err := config.DB.Create(&registrationRequest).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Success: false,
+			Error:   "Erro ao criar solicitação",
+		})
+		return
+	}
+
+	// Atualizar status do utilizador para pending (caso tenha sido rejeitado antes)
+	user.Status = string(models.StatusPending)
+	config.DB.Save(&user)
+
+	c.JSON(http.StatusCreated, models.SuccessResponse{
+		Success: true,
+		Message: "Solicitação enviada com sucesso. Aguarde aprovação da contabilista.",
+		Data: gin.H{
+			"request_id": registrationRequest.ID,
+			"user_id":    user.ID,
+		},
+	})
+}
+
+// Register godoc (mantido para compatibilidade)
+// @Summary      Criar conta diretamente
+// @Description  Regista novo utilizador diretamente (para uso interno)
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        user  body      models.RegisterRequest  true  "Dados de registo"
+// @Success      201   {object}  models.AuthResponse
+// @Router       /auth/register-direct [post]
 func Register(c *gin.Context) {
 	var req models.RegisterRequest
 	
-	// Validar dados recebidos
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Verificar se email já existe
+	// Verificar se username já existe
 	var existingUser models.User
+	if err := config.DB.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Username já está em uso"})
+		return
+	}
+
+	// Verificar se email já existe
 	if err := config.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "Email já está em uso"})
 		return
 	}
 
-	// Verificar se username já existe
-	if err := config.DB.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Username já está em uso"})
+	// Verificar se NIF já existe
+	if err := config.DB.Where("nif = ?", req.NIF).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "NIF já está em uso"})
 		return
 	}
 
@@ -50,12 +183,14 @@ func Register(c *gin.Context) {
 
 	// Criar utilizador
 	user := models.User{
+		Username: req.Username,
 		Email:    req.Email,
 		Password: string(hashedPassword),
 		Name:     req.Name,
-		Username: req.Username,
+		Phone:    req.Phone,
+		NIF:      req.NIF,
 		Role:     req.Role,
-		IsActive: req.IsActive,
+		Status:   req.Status,
 	}
 
 	if err := config.DB.Create(&user).Error; err != nil {
@@ -64,7 +199,7 @@ func Register(c *gin.Context) {
 	}
 
 	// Gerar token
-	token, err := utils.GenerateToken(user.ID, user.Email, user.Username, user.Role)
+	token, err := utils.GenerateToken(user.ID, user.Username, user.NIF, user.Role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao gerar token"})
 		return
@@ -81,17 +216,16 @@ func Register(c *gin.Context) {
 
 // Login godoc
 // @Summary      Entrar
-// @Description  Login com username e password (não precisa de token)
+// @Description  Login com username e password
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        credentials  body      models.LoginRequest  true  "Dados: username e password"
+// @Param        credentials  body      models.LoginRequest  true  "Username e password"
 // @Success      200          {object}  models.AuthResponse
 // @Router       /auth/login [post]
 func Login(c *gin.Context) {
 	var req models.LoginRequest
 	
-	// Validar dados recebidos
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -105,9 +239,20 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Verificar se o utilizador está ativo
-	if !user.IsActive {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Conta desativada"})
+	// Verificar status do utilizador
+	if user.Status != string(models.StatusApproved) {
+		statusMessages := map[string]string{
+			string(models.StatusPending):  "Conta aguarda aprovação da contabilista",
+			string(models.StatusRejected): "Conta foi rejeitada. Contacte o suporte.",
+			string(models.StatusBlocked):  "Conta foi bloqueada. Contacte o suporte.",
+		}
+		
+		message := statusMessages[user.Status]
+		if message == "" {
+			message = "Acesso negado"
+		}
+		
+		c.JSON(http.StatusForbidden, gin.H{"error": message})
 		return
 	}
 
@@ -118,7 +263,7 @@ func Login(c *gin.Context) {
 	}
 
 	// Gerar token
-	token, err := utils.GenerateToken(user.ID, user.Email, user.Username, user.Role)
+	token, err := utils.GenerateToken(user.ID, user.Username, user.NIF, user.Role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao gerar token"})
 		return
@@ -135,29 +280,27 @@ func Login(c *gin.Context) {
 
 // Logout godoc
 // @Summary      Logout do utilizador
-// @Description  Remove token do lado do cliente (logout simples - requer token)
+// @Description  Remove token do lado do cliente
 // @Tags         auth
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
 // @Success      200  {object}  map[string]interface{}
-// @Failure      401  {object}  map[string]string
 // @Router       /auth/logout [post]
 func Logout(c *gin.Context) {
-	// Para logout simples, só precisamos confirmar que o token é válido
 	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
 		return
 	}
 
-	username, _ := c.Get("user_username")
+	userUsername, _ := c.Get("user_username")
 	
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Logout realizado com sucesso",
 		"user_id": userID,
-		"username": username,
+		"username": userUsername,
 	})
 }
 

@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"os"
 	"time"
@@ -12,18 +14,18 @@ var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 type Claims struct {
     UserID   uint   `json:"user_id"`
-    Email    string `json:"email"`
     Username string `json:"username"`
+    NIF      string `json:"nif"`
     Role     string `json:"role"`
     jwt.RegisteredClaims
 }
 
 // Gerar token JWT
-func GenerateToken(userID uint, email, username, role string) (string, error) {
+func GenerateToken(userID uint, username, nif, role string) (string, error) {
     claims := Claims{
         UserID:   userID,
-        Email:    email,
         Username: username,
+        NIF:      nif,
         Role:     role,
         RegisteredClaims: jwt.RegisteredClaims{
             ExpiresAt: jwt.NewNumericDate(time.Now().Add((24 * time.Hour) * 10)), // Expira em 10 dias
@@ -51,4 +53,11 @@ func ValidateToken(tokenString string) (*Claims, error) {
     }
 
     return nil, errors.New("token inválido")
+}
+
+// GenerateRandomToken gera um token aleatório único
+func GenerateRandomToken() string {
+	bytes := make([]byte, 16)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
 }

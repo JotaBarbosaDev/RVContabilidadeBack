@@ -28,7 +28,7 @@ func GetProfile(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := config.DB.First(&user, userID).Error; err != nil {
+	if err := config.DB.Preload("Companies").First(&user, userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, models.ErrorResponse{
 			Success: false,
 			Error:   "Utilizador não encontrado",
@@ -40,36 +40,5 @@ func GetProfile(c *gin.Context) {
 		Success: true,
 		Message: "Perfil obtido com sucesso",
 		Data:    user,
-	})
-}
-
-// GetAllUsers godoc
-// @Summary      Listar utilizadores
-// @Description  Lista todos os utilizadores (só admins - requer token de admin no header Authorization)
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Security     BearerAuth
-// @Success      200  {object}  models.SuccessResponse
-// @Router       /admin/users [get]
-func GetAllUsers(c *gin.Context) {
-	var users []models.User
-	
-	// Obter todos os utilizadores da base de dados
-	if err := config.DB.Find(&users).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-			Success: false,
-			Error:   "Erro ao obter utilizadores",
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, models.SuccessResponse{
-		Success: true,
-		Message: "Utilizadores obtidos com sucesso",
-		Data: map[string]interface{}{
-			"users": users,
-			"total": len(users),
-		},
 	})
 }
