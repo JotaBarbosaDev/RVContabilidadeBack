@@ -787,6 +787,10 @@ const docTemplate = `{
                 "request_data": {
                     "type": "string"
                 },
+                "request_type": {
+                    "description": "new_client, existing_client",
+                    "type": "string"
+                },
                 "review_notes": {
                     "type": "string"
                 },

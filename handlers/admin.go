@@ -21,15 +21,6 @@ import (
 // @Success      200  {object}  models.SuccessResponse
 // @Router       /admin/pending-requests [get]
 func GetPendingRequests(c *gin.Context) {
-	userRole, _ := c.Get("user_role")
-	if userRole != "accountant" && userRole != "admin" {
-		c.JSON(http.StatusForbidden, models.ErrorResponse{
-			Success: false,
-			Error:   "Acesso negado",
-		})
-		return
-	}
-
 	var requests []models.RegistrationRequest
 	if err := config.DB.Preload("User").Where("status = ?", "pending").Find(&requests).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -43,11 +34,15 @@ func GetPendingRequests(c *gin.Context) {
 	var response []models.PendingRequestResponseDTO
 	for _, req := range requests {
 		var requestData models.RegistrationRequestDTO
-		json.Unmarshal([]byte(req.RequestData), &requestData)
+		if err := json.Unmarshal([]byte(req.RequestData), &requestData); err != nil {
+			// Se não conseguir fazer unmarshal, criar um requestData vazio
+			requestData = models.RegistrationRequestDTO{}
+		}
 		
 		response = append(response, models.PendingRequestResponseDTO{
 			ID:          req.ID,
 			User:        req.User,
+			RequestType: req.RequestType,
 			RequestData: requestData,
 			SubmittedAt: req.SubmittedAt,
 			Status:      req.Status,
@@ -72,16 +67,7 @@ func GetPendingRequests(c *gin.Context) {
 // @Success      200      {object}  models.SuccessResponse
 // @Router       /admin/approve-request [post]
 func ApproveRequest(c *gin.Context) {
-	userRole, _ := c.Get("user_role")
 	reviewerID, _ := c.Get("user_id")
-	
-	if userRole != "accountant" && userRole != "admin" {
-		c.JSON(http.StatusForbidden, models.ErrorResponse{
-			Success: false,
-			Error:   "Acesso negado",
-		})
-		return
-	}
 
 	var req models.ApprovalRequestDTO
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -203,15 +189,6 @@ func ApproveRequest(c *gin.Context) {
 // @Success      200  {object}  models.SuccessResponse
 // @Router       /admin/requests [get]
 func GetAllRequests(c *gin.Context) {
-	userRole, _ := c.Get("user_role")
-	if userRole != "accountant" && userRole != "admin" {
-		c.JSON(http.StatusForbidden, models.ErrorResponse{
-			Success: false,
-			Error:   "Acesso negado",
-		})
-		return
-	}
-
 	var requests []models.RegistrationRequest
 	if err := config.DB.Preload("User").Preload("ReviewedByUser").Find(&requests).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -239,15 +216,6 @@ func GetAllRequests(c *gin.Context) {
 // @Success      200  {object}  models.SuccessResponse
 // @Router       /admin/requests/{id} [get]
 func GetRequestDetails(c *gin.Context) {
-	userRole, _ := c.Get("user_role")
-	if userRole != "accountant" && userRole != "admin" {
-		c.JSON(http.StatusForbidden, models.ErrorResponse{
-			Success: false,
-			Error:   "Acesso negado",
-		})
-		return
-	}
-
 	requestID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
@@ -356,15 +324,6 @@ func UpdateUserStatus(c *gin.Context) {
 // @Success      200  {object}  models.SuccessResponse
 // @Router       /admin/users [get]
 func GetAllUsers(c *gin.Context) {
-	userRole, _ := c.Get("user_role")
-	if userRole != "accountant" && userRole != "admin" {
-		c.JSON(http.StatusForbidden, models.ErrorResponse{
-			Success: false,
-			Error:   "Acesso negado",
-		})
-		return
-	}
-
 	var users []models.User
 	
 	if err := config.DB.Preload("Companies").Find(&users).Error; err != nil {
@@ -396,15 +355,6 @@ func GetAllUsers(c *gin.Context) {
 // @Success      200  {object}  models.SuccessResponse
 // @Router       /admin/users/{id} [get]
 func GetUserDetails(c *gin.Context) {
-	userRole, _ := c.Get("user_role")
-	if userRole != "accountant" && userRole != "admin" {
-		c.JSON(http.StatusForbidden, models.ErrorResponse{
-			Success: false,
-			Error:   "Acesso negado",
-		})
-		return
-	}
-
 	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{

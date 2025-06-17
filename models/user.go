@@ -59,6 +59,7 @@ type Company struct {
 type RegistrationRequest struct {
 	ID                uint      `json:"id" gorm:"primaryKey"`
 	UserID            uint      `json:"user_id" gorm:"not null"`
+	RequestType       string    `json:"request_type" gorm:"default:'new_client'"` // new_client, existing_client
 	RequestData       string    `json:"request_data" gorm:"type:text"`
 	Status            string    `json:"status" gorm:"default:'pending'"`
 	SubmittedAt       time.Time `json:"submitted_at" gorm:"autoCreateTime"`
@@ -110,6 +111,7 @@ type ApprovalRequestDTO struct {
 type PendingRequestResponseDTO struct {
 	ID           uint                   `json:"id" example:"1"`
 	User         User                   `json:"user"`
+	RequestType  string                 `json:"request_type" example:"new_client"`
 	RequestData  RegistrationRequestDTO `json:"request_data"`
 	SubmittedAt  time.Time              `json:"submitted_at"`
 	Status       string                 `json:"status" example:"pending"`

@@ -108,9 +108,16 @@ func RegisterClient(c *gin.Context) {
 	// Converter request para JSON
 	requestDataJSON, _ := json.Marshal(req)
 
+	// Determinar tipo de request
+	requestType := "new_client"
+	if userExists {
+		requestType = "existing_client"
+	}
+
 	// Criar solicitação de registo
 	registrationRequest := models.RegistrationRequest{
 		UserID:        user.ID,
+		RequestType:   requestType,
 		RequestData:   string(requestDataJSON),
 		Status:        "pending",
 		ApprovalToken: utils.GenerateRandomToken(),

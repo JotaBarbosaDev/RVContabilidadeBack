@@ -11,6 +11,7 @@ func SetupRoutes() *gin.Engine {
     router := gin.Default()
 
     // Middlewares globais
+    router.Use(middlewares.LoggingMiddleware())
     router.Use(middlewares.CORSMiddleware())
 
     // API
