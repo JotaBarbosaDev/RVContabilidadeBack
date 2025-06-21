@@ -68,6 +68,10 @@ func SetupRoutes() *gin.Engine {
             client.GET("/company", handlers.GetClientCompany)
             client.PUT("/company", handlers.UpdateClientCompany)
             client.GET("/requests", handlers.GetClientRequests)
+            
+            // Novos endpoints para completar dados após aprovação
+            client.POST("/complete-user-data", handlers.CompleteUserData)
+            client.POST("/complete-company-data", handlers.CompleteCompanyData)
         }
 
         // Rota de informações da API (pública)

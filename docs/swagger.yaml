@@ -28,33 +28,71 @@ definitions:
     type: object
   models.Company:
     properties:
+      accounting_regime:
+        description: Regime contabilístico e fiscal (obrigatórios)
+        type: string
       address:
+        type: string
+      annual_revenue:
+        description: Dados operacionais completos
+        type: number
+      bank_name:
+        description: Informação bancária
+        type: string
+      bic:
+        type: string
+      business_activity:
+        description: Dados operacionais básicos
         type: string
       cae:
         type: string
       city:
         type: string
       company_name:
+        description: Dados básicos (obrigatórios no registo)
+        type: string
+      corporate_object:
         type: string
       country:
         type: string
+      county:
+        type: string
       created_at:
+        type: string
+      district:
+        type: string
+      estimated_revenue:
+        type: number
+      founding_date:
+        type: string
+      group_start_date:
+        type: string
+      has_stock:
+        type: boolean
+      iban:
         type: string
       id:
         type: integer
       legal_form:
         type: string
+      main_clients:
+        type: string
+      main_suppliers:
+        type: string
+      monthly_invoices:
+        type: integer
       nipc:
         type: string
+      number_employees:
+        type: integer
       postal_code:
-        type: string
-      registration_date:
         type: string
       share_capital:
         type: number
       status:
         type: string
       trade_name:
+        description: Dados completos (preenchidos depois da aprovação)
         type: string
       updated_at:
         type: string
@@ -62,6 +100,110 @@ definitions:
         $ref: '#/definitions/models.User'
       user_id:
         type: integer
+      vat_regime:
+        type: string
+    type: object
+  models.CompleteCompanyDataDTO:
+    properties:
+      address:
+        example: Rua das Flores, 123
+        type: string
+      annual_revenue:
+        example: 100000
+        type: number
+      bank_name:
+        example: Banco Comercial Português
+        type: string
+      bic:
+        example: BCOMPTPL
+        type: string
+      city:
+        example: Lisboa
+        type: string
+      corporate_object:
+        example: Prestação de serviços de consultoria
+        type: string
+      county:
+        example: Lisboa
+        type: string
+      district:
+        example: Lisboa
+        type: string
+      group_start_date:
+        example: "2024-01-01"
+        type: string
+      has_stock:
+        example: false
+        type: boolean
+      iban:
+        example: PT50000201231234567890154
+        type: string
+      main_clients:
+        example: Cliente A, Cliente B
+        type: string
+      main_suppliers:
+        example: Fornecedor X, Fornecedor Y
+        type: string
+      postal_code:
+        example: 1000-001
+        type: string
+      share_capital:
+        example: 5000
+        type: number
+      trade_name:
+        example: Silva Consultoria
+        type: string
+    type: object
+  models.CompleteUserDataDTO:
+    properties:
+      billing_software:
+        example: Moloni
+        type: string
+      citizen_card_expiry:
+        example: "2030-12-31"
+        type: string
+      citizen_card_number:
+        example: "12345678"
+        type: string
+      e_fatura_password:
+        example: password123
+        type: string
+      e_fatura_user:
+        example: "123456789"
+        type: string
+      fiscal_county:
+        example: Lisboa
+        type: string
+      fiscal_district:
+        example: Lisboa
+        type: string
+      fixed_phone:
+        example: "213456789"
+        type: string
+      marital_status:
+        example: Solteiro
+        type: string
+      official_email:
+        example: geral@empresa.com
+        type: string
+      portal_financas_password:
+        example: password123
+        type: string
+      portal_financas_user:
+        example: "123456789"
+        type: string
+      preferred_contact_hours:
+        example: 9h-17h
+        type: string
+      preferred_format:
+        example: digital
+        type: string
+      ss_direct_password:
+        example: password123
+        type: string
+      ss_direct_user:
+        example: "123456789"
+        type: string
     type: object
   models.LoginRequest:
     properties:
@@ -157,28 +299,52 @@ definitions:
     type: object
   models.RegistrationRequestDTO:
     properties:
-      address:
-        example: Rua das Flores, 123
+      accounting_regime:
+        description: Regimes (obrigatórios para aprovação)
+        enum:
+        - organizada
+        - simplificada
+        example: organizada
+        type: string
+      business_activity:
+        description: Dados operacionais básicos
+        example: Consultoria em gestão
         type: string
       cae:
         example: "69200"
         type: string
-      city:
-        example: Lisboa
-        type: string
       company_name:
-        description: Dados da Empresa
+        description: Dados empresa mínimos
         example: Silva & Associados Lda
         type: string
-      country:
-        example: Portugal
+      date_of_birth:
+        example: "1990-01-15"
         type: string
       email:
         example: joao@exemplo.com
         type: string
+      estimated_revenue:
+        example: 50000
+        type: number
+      fiscal_address:
+        description: Morada fiscal mínima
+        example: Rua das Flores, 123
+        type: string
+      fiscal_city:
+        example: Lisboa
+        type: string
+      fiscal_postal_code:
+        example: 1000-001
+        type: string
+      founding_date:
+        example: "2024-01-15"
+        type: string
       legal_form:
         example: Sociedade por Quotas
         type: string
+      monthly_invoices:
+        example: 10
+        type: integer
       name:
         example: João Silva
         type: string
@@ -188,6 +354,9 @@ definitions:
       nipc:
         example: "123456789"
         type: string
+      number_employees:
+        example: 2
+        type: integer
       password:
         example: password123
         minLength: 6
@@ -195,34 +364,45 @@ definitions:
       phone:
         example: "912345678"
         type: string
-      postal_code:
-        example: 1000-001
-        type: string
-      registration_date:
-        example: "2024-01-15"
-        type: string
-      share_capital:
-        example: 5000
-        type: number
-      trade_name:
-        example: Silva Consultoria
+      report_frequency:
+        enum:
+        - mensal
+        - trimestral
+        example: mensal
         type: string
       username:
-        description: Dados Pessoais
+        description: Dados pessoais mínimos
         example: joao.silva
         type: string
+      vat_regime:
+        enum:
+        - normal
+        - isento_art53
+        - pequeno_retalhista
+        example: normal
+        type: string
     required:
-    - address
-    - city
+    - accounting_regime
+    - business_activity
+    - cae
     - company_name
+    - date_of_birth
     - email
+    - estimated_revenue
+    - fiscal_address
+    - fiscal_city
+    - fiscal_postal_code
+    - founding_date
+    - legal_form
+    - monthly_invoices
     - name
     - nif
     - nipc
     - password
     - phone
-    - postal_code
+    - report_frequency
     - username
+    - vat_regime
     type: object
   models.SuccessResponse:
     properties:
@@ -275,41 +455,86 @@ definitions:
     type: object
   models.User:
     properties:
-      companies:
+      billing_software:
+        type: string
+      citizen_card_expiry:
+        type: string
+      citizen_card_number:
+        type: string
+      company:
+        allOf:
+        - $ref: '#/definitions/models.Company'
         description: Relacionamentos
-        items:
-          $ref: '#/definitions/models.Company'
-        type: array
       created_at:
         example: "2023-01-01T00:00:00Z"
+        type: string
+      date_of_birth:
+        description: Dados pessoais completos (preenchidos depois da aprovação)
+        type: string
+      e_fatura_password:
+        type: string
+      e_fatura_user:
         type: string
       email:
         example: joao@exemplo.com
         type: string
+      fiscal_address:
+        description: Morada fiscal completa
+        type: string
+      fiscal_city:
+        type: string
+      fiscal_county:
+        type: string
+      fiscal_district:
+        type: string
+      fiscal_postal_code:
+        type: string
+      fixed_phone:
+        description: Contactos adicionais
+        type: string
       id:
         example: 1
         type: integer
+      marital_status:
+        type: string
       name:
         example: João Silva
         type: string
       nif:
-        description: Chave única para detetar duplicados
         example: "123456789"
+        type: string
+      official_email:
         type: string
       phone:
         example: "912345678"
+        type: string
+      portal_financas_password:
+        type: string
+      portal_financas_user:
+        description: Acessos e credenciais (guardados encriptados)
+        type: string
+      preferred_contact_hours:
+        type: string
+      preferred_format:
+        description: Preferências de comunicação
+        type: string
+      report_frequency:
         type: string
       requests:
         items:
           $ref: '#/definitions/models.RegistrationRequest'
         type: array
       role:
-        description: client, accountant, admin
         example: client
         type: string
+      ss_direct_password:
+        type: string
+      ss_direct_user:
+        type: string
       status:
-        description: pending, approved, rejected, blocked
         example: pending
+        type: string
+      tax_residence_country:
         type: string
       updated_at:
         example: "2023-01-01T00:00:00Z"
@@ -597,6 +822,54 @@ paths:
       security:
       - BearerAuth: []
       summary: Atualizar dados da empresa
+      tags:
+      - client
+  /client/complete-company-data:
+    put:
+      consumes:
+      - application/json
+      description: Completa dados da empresa adicionais após aprovação
+      parameters:
+      - description: Dados da empresa completos
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.CompleteCompanyDataDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Completar dados da empresa
+      tags:
+      - client
+  /client/complete-user-data:
+    put:
+      consumes:
+      - application/json
+      description: Completa dados pessoais adicionais após aprovação
+      parameters:
+      - description: Dados pessoais completos
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.CompleteUserDataDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Completar dados pessoais
       tags:
       - client
   /client/profile:

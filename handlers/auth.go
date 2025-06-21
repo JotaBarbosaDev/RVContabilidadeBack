@@ -6,6 +6,7 @@ import (
 	"RVContabilidadeBack/utils"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -75,7 +76,17 @@ func RegisterClient(c *gin.Context) {
 			return
 		}
 
-		// Criar novo utilizador
+		// Parse da data de nascimento
+		dateOfBirth, err := time.Parse("2006-01-02", req.DateOfBirth)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse{
+				Success: false,
+				Error:   "Data de nascimento inválida. Use formato YYYY-MM-DD.",
+			})
+			return
+		}
+
+		// Criar novo utilizador com dados mínimos
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -86,14 +97,20 @@ func RegisterClient(c *gin.Context) {
 		}
 
 		user = models.User{
-			Username: req.Username,
-			Name:     req.Name,
-			Email:    req.Email,
-			Phone:    req.Phone,
-			NIF:      req.NIF,
-			Password: string(hashedPassword),
-			Role:     "client",
-			Status:   string(models.StatusPending),
+			Username:            req.Username,
+			Name:                req.Name,
+			Email:               req.Email,
+			Phone:               req.Phone,
+			NIF:                 req.NIF,
+			Password:            string(hashedPassword),
+			DateOfBirth:         &dateOfBirth,
+			FiscalAddress:       req.FiscalAddress,
+			FiscalPostalCode:    req.FiscalPostalCode,
+			FiscalCity:          req.FiscalCity,
+			TaxResidenceCountry: "Portugal",
+			ReportFrequency:     req.ReportFrequency,
+			Role:                "client",
+			Status:              string(models.StatusPending),
 		}
 
 		if err := config.DB.Create(&user).Error; err != nil {
@@ -105,8 +122,49 @@ func RegisterClient(c *gin.Context) {
 		}
 	}
 
-	// Converter request para JSON
-	requestDataJSON, _ := json.Marshal(req)
+	// Parse da data de constituição da empresa
+	foundingDate, err := time.Parse("2006-01-02", req.FoundingDate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Success: false,
+			Error:   "Data de constituição inválida. Use formato YYYY-MM-DD.",
+		})
+		return
+	}
+
+	// Criar empresa com dados mínimos
+	company := models.Company{
+		UserID:           user.ID,
+		CompanyName:      req.CompanyName,
+		NIPC:            req.NIPC,
+		CAE:             req.CAE,
+		LegalForm:       req.LegalForm,
+		FoundingDate:    &foundingDate,
+		AccountingRegime: req.AccountingRegime,
+		VATRegime:       req.VATRegime,
+		BusinessActivity: req.BusinessActivity,
+		EstimatedRevenue: req.EstimatedRevenue,
+		MonthlyInvoices: req.MonthlyInvoices,
+		NumberEmployees: req.NumberEmployees,
+		Country:         "Portugal",
+	}
+
+	if err := config.DB.Create(&company).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Success: false,
+			Error:   "Erro ao criar empresa",
+		})
+		return
+	}
+
+	// Converter request para JSON (dados mínimos para aprovação)
+	requestData := map[string]interface{}{
+		"user_id":     user.ID,
+		"company_id":  company.ID,
+		"user_data":   user,
+		"company_data": company,
+	}
+	requestDataJSON, _ := json.Marshal(requestData)
 
 	// Determinar tipo de request
 	requestType := "new_client"

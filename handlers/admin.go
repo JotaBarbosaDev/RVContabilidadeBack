@@ -102,7 +102,20 @@ func ApproveRequest(c *gin.Context) {
 
 	// Atualizar solicitação
 	now := time.Now()
-	reviewerIDUint := uint(reviewerID.(float64))
+	reviewerIDUint, ok := reviewerID.(uint)
+	if !ok {
+		// Tentar converter de float64 para uint (caso venha do JWT como número)
+		if f, ok := reviewerID.(float64); ok {
+			reviewerIDUint = uint(f)
+		} else {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Success: false,
+				Error:   "Erro ao obter ID do revisor",
+			})
+			return
+		}
+	}
 	
 	registrationRequest.Status = req.Status
 	registrationRequest.ReviewedAt = &now
@@ -122,36 +135,6 @@ func ApproveRequest(c *gin.Context) {
 	user := registrationRequest.User
 	if req.Status == "approved" {
 		user.Status = string(models.StatusApproved)
-		
-		// Criar empresa se aprovado
-		var requestData models.RegistrationRequestDTO
-		json.Unmarshal([]byte(registrationRequest.RequestData), &requestData)
-		
-		registrationDate, _ := time.Parse("2006-01-02", requestData.RegistrationDate)
-		
-		company := models.Company{
-			UserID:           user.ID,
-			CompanyName:      requestData.CompanyName,
-			TradeName:        requestData.TradeName,
-			NIPC:             requestData.NIPC,
-			Address:          requestData.Address,
-			PostalCode:       requestData.PostalCode,
-			City:             requestData.City,
-			Country:          requestData.Country,
-			CAE:              requestData.CAE,
-			LegalForm:        requestData.LegalForm,
-			ShareCapital:     requestData.ShareCapital,
-			RegistrationDate: registrationDate,
-		}
-		
-		if err := tx.Create(&company).Error; err != nil {
-			tx.Rollback()
-			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-				Success: false,
-				Error:   "Erro ao criar empresa",
-			})
-			return
-		}
 	} else {
 		user.Status = string(models.StatusRejected)
 	}

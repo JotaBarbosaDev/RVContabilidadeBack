@@ -454,6 +454,84 @@ const docTemplate = `{
                 }
             }
         },
+        "/client/complete-company-data": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Completa dados da empresa adicionais após aprovação",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "client"
+                ],
+                "summary": "Completar dados da empresa",
+                "parameters": [
+                    {
+                        "description": "Dados da empresa completos",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CompleteCompanyDataDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/client/complete-user-data": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Completa dados pessoais adicionais após aprovação",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "client"
+                ],
+                "summary": "Completar dados pessoais",
+                "parameters": [
+                    {
+                        "description": "Dados pessoais completos",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CompleteUserDataDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/client/profile": {
             "get": {
                 "security": [
@@ -641,7 +719,26 @@ const docTemplate = `{
         "models.Company": {
             "type": "object",
             "properties": {
+                "accounting_regime": {
+                    "description": "Regime contabilístico e fiscal (obrigatórios)",
+                    "type": "string"
+                },
                 "address": {
+                    "type": "string"
+                },
+                "annual_revenue": {
+                    "description": "Dados operacionais completos",
+                    "type": "number"
+                },
+                "bank_name": {
+                    "description": "Informação bancária",
+                    "type": "string"
+                },
+                "bic": {
+                    "type": "string"
+                },
+                "business_activity": {
+                    "description": "Dados operacionais básicos",
                     "type": "string"
                 },
                 "cae": {
@@ -651,12 +748,37 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "company_name": {
+                    "description": "Dados básicos (obrigatórios no registo)",
+                    "type": "string"
+                },
+                "corporate_object": {
                     "type": "string"
                 },
                 "country": {
                     "type": "string"
                 },
+                "county": {
+                    "type": "string"
+                },
                 "created_at": {
+                    "type": "string"
+                },
+                "district": {
+                    "type": "string"
+                },
+                "estimated_revenue": {
+                    "type": "number"
+                },
+                "founding_date": {
+                    "type": "string"
+                },
+                "group_start_date": {
+                    "type": "string"
+                },
+                "has_stock": {
+                    "type": "boolean"
+                },
+                "iban": {
                     "type": "string"
                 },
                 "id": {
@@ -665,13 +787,22 @@ const docTemplate = `{
                 "legal_form": {
                     "type": "string"
                 },
+                "main_clients": {
+                    "type": "string"
+                },
+                "main_suppliers": {
+                    "type": "string"
+                },
+                "monthly_invoices": {
+                    "type": "integer"
+                },
                 "nipc": {
                     "type": "string"
                 },
-                "postal_code": {
-                    "type": "string"
+                "number_employees": {
+                    "type": "integer"
                 },
-                "registration_date": {
+                "postal_code": {
                     "type": "string"
                 },
                 "share_capital": {
@@ -681,6 +812,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "trade_name": {
+                    "description": "Dados completos (preenchidos depois da aprovação)",
                     "type": "string"
                 },
                 "updated_at": {
@@ -691,6 +823,147 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "integer"
+                },
+                "vat_regime": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CompleteCompanyDataDTO": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "Rua das Flores, 123"
+                },
+                "annual_revenue": {
+                    "type": "number",
+                    "example": 100000
+                },
+                "bank_name": {
+                    "type": "string",
+                    "example": "Banco Comercial Português"
+                },
+                "bic": {
+                    "type": "string",
+                    "example": "BCOMPTPL"
+                },
+                "city": {
+                    "type": "string",
+                    "example": "Lisboa"
+                },
+                "corporate_object": {
+                    "type": "string",
+                    "example": "Prestação de serviços de consultoria"
+                },
+                "county": {
+                    "type": "string",
+                    "example": "Lisboa"
+                },
+                "district": {
+                    "type": "string",
+                    "example": "Lisboa"
+                },
+                "group_start_date": {
+                    "type": "string",
+                    "example": "2024-01-01"
+                },
+                "has_stock": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "iban": {
+                    "type": "string",
+                    "example": "PT50000201231234567890154"
+                },
+                "main_clients": {
+                    "type": "string",
+                    "example": "Cliente A, Cliente B"
+                },
+                "main_suppliers": {
+                    "type": "string",
+                    "example": "Fornecedor X, Fornecedor Y"
+                },
+                "postal_code": {
+                    "type": "string",
+                    "example": "1000-001"
+                },
+                "share_capital": {
+                    "type": "number",
+                    "example": 5000
+                },
+                "trade_name": {
+                    "type": "string",
+                    "example": "Silva Consultoria"
+                }
+            }
+        },
+        "models.CompleteUserDataDTO": {
+            "type": "object",
+            "properties": {
+                "billing_software": {
+                    "type": "string",
+                    "example": "Moloni"
+                },
+                "citizen_card_expiry": {
+                    "type": "string",
+                    "example": "2030-12-31"
+                },
+                "citizen_card_number": {
+                    "type": "string",
+                    "example": "12345678"
+                },
+                "e_fatura_password": {
+                    "type": "string",
+                    "example": "password123"
+                },
+                "e_fatura_user": {
+                    "type": "string",
+                    "example": "123456789"
+                },
+                "fiscal_county": {
+                    "type": "string",
+                    "example": "Lisboa"
+                },
+                "fiscal_district": {
+                    "type": "string",
+                    "example": "Lisboa"
+                },
+                "fixed_phone": {
+                    "type": "string",
+                    "example": "213456789"
+                },
+                "marital_status": {
+                    "type": "string",
+                    "example": "Solteiro"
+                },
+                "official_email": {
+                    "type": "string",
+                    "example": "geral@empresa.com"
+                },
+                "portal_financas_password": {
+                    "type": "string",
+                    "example": "password123"
+                },
+                "portal_financas_user": {
+                    "type": "string",
+                    "example": "123456789"
+                },
+                "preferred_contact_hours": {
+                    "type": "string",
+                    "example": "9h-17h"
+                },
+                "preferred_format": {
+                    "type": "string",
+                    "example": "digital"
+                },
+                "ss_direct_password": {
+                    "type": "string",
+                    "example": "password123"
+                },
+                "ss_direct_user": {
+                    "type": "string",
+                    "example": "123456789"
                 }
             }
         },
@@ -823,47 +1096,88 @@ const docTemplate = `{
         "models.RegistrationRequestDTO": {
             "type": "object",
             "required": [
-                "address",
-                "city",
+                "accounting_regime",
+                "business_activity",
+                "cae",
                 "company_name",
+                "date_of_birth",
                 "email",
+                "estimated_revenue",
+                "fiscal_address",
+                "fiscal_city",
+                "fiscal_postal_code",
+                "founding_date",
+                "legal_form",
+                "monthly_invoices",
                 "name",
                 "nif",
                 "nipc",
                 "password",
                 "phone",
-                "postal_code",
-                "username"
+                "report_frequency",
+                "username",
+                "vat_regime"
             ],
             "properties": {
-                "address": {
+                "accounting_regime": {
+                    "description": "Regimes (obrigatórios para aprovação)",
                     "type": "string",
-                    "example": "Rua das Flores, 123"
+                    "enum": [
+                        "organizada",
+                        "simplificada"
+                    ],
+                    "example": "organizada"
+                },
+                "business_activity": {
+                    "description": "Dados operacionais básicos",
+                    "type": "string",
+                    "example": "Consultoria em gestão"
                 },
                 "cae": {
                     "type": "string",
                     "example": "69200"
                 },
-                "city": {
-                    "type": "string",
-                    "example": "Lisboa"
-                },
                 "company_name": {
-                    "description": "Dados da Empresa",
+                    "description": "Dados empresa mínimos",
                     "type": "string",
                     "example": "Silva \u0026 Associados Lda"
                 },
-                "country": {
+                "date_of_birth": {
                     "type": "string",
-                    "example": "Portugal"
+                    "example": "1990-01-15"
                 },
                 "email": {
                     "type": "string",
                     "example": "joao@exemplo.com"
                 },
+                "estimated_revenue": {
+                    "type": "number",
+                    "example": 50000
+                },
+                "fiscal_address": {
+                    "description": "Morada fiscal mínima",
+                    "type": "string",
+                    "example": "Rua das Flores, 123"
+                },
+                "fiscal_city": {
+                    "type": "string",
+                    "example": "Lisboa"
+                },
+                "fiscal_postal_code": {
+                    "type": "string",
+                    "example": "1000-001"
+                },
+                "founding_date": {
+                    "type": "string",
+                    "example": "2024-01-15"
+                },
                 "legal_form": {
                     "type": "string",
                     "example": "Sociedade por Quotas"
+                },
+                "monthly_invoices": {
+                    "type": "integer",
+                    "example": 10
                 },
                 "name": {
                     "type": "string",
@@ -877,6 +1191,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "123456789"
                 },
+                "number_employees": {
+                    "type": "integer",
+                    "example": 2
+                },
                 "password": {
                     "type": "string",
                     "minLength": 6,
@@ -886,26 +1204,27 @@ const docTemplate = `{
                     "type": "string",
                     "example": "912345678"
                 },
-                "postal_code": {
+                "report_frequency": {
                     "type": "string",
-                    "example": "1000-001"
-                },
-                "registration_date": {
-                    "type": "string",
-                    "example": "2024-01-15"
-                },
-                "share_capital": {
-                    "type": "number",
-                    "example": 5000
-                },
-                "trade_name": {
-                    "type": "string",
-                    "example": "Silva Consultoria"
+                    "enum": [
+                        "mensal",
+                        "trimestral"
+                    ],
+                    "example": "mensal"
                 },
                 "username": {
-                    "description": "Dados Pessoais",
+                    "description": "Dados pessoais mínimos",
                     "type": "string",
                     "example": "joao.silva"
+                },
+                "vat_regime": {
+                    "type": "string",
+                    "enum": [
+                        "normal",
+                        "isento_art53",
+                        "pequeno_retalhista"
+                    ],
+                    "example": "normal"
                 }
             }
         },
@@ -981,37 +1300,99 @@ const docTemplate = `{
         "models.User": {
             "type": "object",
             "properties": {
-                "companies": {
+                "billing_software": {
+                    "type": "string"
+                },
+                "citizen_card_expiry": {
+                    "type": "string"
+                },
+                "citizen_card_number": {
+                    "type": "string"
+                },
+                "company": {
                     "description": "Relacionamentos",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.Company"
-                    }
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.Company"
+                        }
+                    ]
                 },
                 "created_at": {
                     "type": "string",
                     "example": "2023-01-01T00:00:00Z"
                 },
+                "date_of_birth": {
+                    "description": "Dados pessoais completos (preenchidos depois da aprovação)",
+                    "type": "string"
+                },
+                "e_fatura_password": {
+                    "type": "string"
+                },
+                "e_fatura_user": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string",
                     "example": "joao@exemplo.com"
                 },
+                "fiscal_address": {
+                    "description": "Morada fiscal completa",
+                    "type": "string"
+                },
+                "fiscal_city": {
+                    "type": "string"
+                },
+                "fiscal_county": {
+                    "type": "string"
+                },
+                "fiscal_district": {
+                    "type": "string"
+                },
+                "fiscal_postal_code": {
+                    "type": "string"
+                },
+                "fixed_phone": {
+                    "description": "Contactos adicionais",
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer",
                     "example": 1
+                },
+                "marital_status": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string",
                     "example": "João Silva"
                 },
                 "nif": {
-                    "description": "Chave única para detetar duplicados",
                     "type": "string",
                     "example": "123456789"
+                },
+                "official_email": {
+                    "type": "string"
                 },
                 "phone": {
                     "type": "string",
                     "example": "912345678"
+                },
+                "portal_financas_password": {
+                    "type": "string"
+                },
+                "portal_financas_user": {
+                    "description": "Acessos e credenciais (guardados encriptados)",
+                    "type": "string"
+                },
+                "preferred_contact_hours": {
+                    "type": "string"
+                },
+                "preferred_format": {
+                    "description": "Preferências de comunicação",
+                    "type": "string"
+                },
+                "report_frequency": {
+                    "type": "string"
                 },
                 "requests": {
                     "type": "array",
@@ -1020,14 +1401,21 @@ const docTemplate = `{
                     }
                 },
                 "role": {
-                    "description": "client, accountant, admin",
                     "type": "string",
                     "example": "client"
                 },
+                "ss_direct_password": {
+                    "type": "string"
+                },
+                "ss_direct_user": {
+                    "type": "string"
+                },
                 "status": {
-                    "description": "pending, approved, rejected, blocked",
                     "type": "string",
                     "example": "pending"
+                },
+                "tax_residence_country": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string",
