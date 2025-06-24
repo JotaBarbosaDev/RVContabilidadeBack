@@ -524,3 +524,81 @@ func GetAllUsersSimple(c *gin.Context) {
 		},
 	})
 }
+
+// GetDashboardData godoc
+// @Summary      Dados do dashboard para contabilista
+// @Description  Obtém dados resumidos para o dashboard da contabilista incluindo estatísticas e clientes pendentes
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  models.SuccessResponse
+// @Router       /admin/dashboard [get]
+func GetDashboardData(c *gin.Context) {
+	dashboardData, err := adminService.GetDashboardData()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Success: false,
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponse{
+		Success: true,
+		Message: "Dados do dashboard obtidos com sucesso",
+		Data:    dashboardData,
+	})
+}
+
+// GetAllClientsOverview godoc
+// @Summary      Visão geral de todos os clientes
+// @Description  Lista resumida de todos os clientes (pendentes e aprovados) para visão geral
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  models.SuccessResponse
+// @Router       /admin/clients/overview [get]
+func GetAllClientsOverview(c *gin.Context) {
+	overview, err := adminService.GetAllClientsOverview()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Success: false,
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponse{
+		Success: true,
+		Message: "Visão geral de clientes obtida com sucesso",
+		Data:    overview,
+	})
+}
+
+// GetCompleteUsersOverview godoc
+// @Summary      Listar visão completa de todos os usuários
+// @Description  Lista todos os usuários com dados combinados de users, registration_requests e companies (apenas contabilistas/admin)
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  models.SuccessResponse
+// @Router       /admin/complete-users-overview [get]
+func GetCompleteUsersOverview(c *gin.Context) {
+	overview, err := adminService.GetCompleteUsersOverview()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Success: false,
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponse{
+		Success: true,
+		Message: "Visão completa dos usuários obtida com sucesso",
+		Data:    overview,
+	})
+}

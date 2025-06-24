@@ -39,6 +39,9 @@ func SetupRoutes() *gin.Engine {
         admin.Use(middlewares.AuthMiddleware())
         admin.Use(middlewares.RequireRole("accountant", "admin"))
         {
+            // Dashboard
+            admin.GET("/dashboard", controllers.GetDashboardData)
+            
             // Gestão de solicitações
             admin.GET("/pending-requests", controllers.GetPendingRequests)
             admin.POST("/approve-request", controllers.ApproveRequest)
@@ -53,9 +56,13 @@ func SetupRoutes() *gin.Engine {
             
             // Gestão de clientes aprovados
             admin.GET("/clients", controllers.GetApprovedClients)
+            admin.GET("/clients/overview", controllers.GetAllClientsOverview)
             admin.PUT("/clients/:id", controllers.UpdateClientData)
             admin.PUT("/clients/:id/company", controllers.AdminUpdateClientCompany) 
             admin.DELETE("/clients/:id", controllers.DeleteClient)
+            
+            // Visão completa de todos os clientes (combina users, registration_requests e companies)
+            admin.GET("/complete-users-overview", controllers.GetCompleteUsersOverview)
         }
 
         // Rotas apenas para admins

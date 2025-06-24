@@ -11,8 +11,8 @@ import (
 )
 
 // @title           RV Contabilidade API
-// @version         1.0
-// @description     Sistema de gestão contabilística com aprovação de clientes
+// @version         2.0
+// @description     Sistema de gestão contabilística com aprovação de clientes - Clean Architecture
 
 // @host      localhost:8080
 // @BasePath  /api
@@ -35,7 +35,7 @@ func main() {
     router.GET("/", func(c *gin.Context) {
         c.JSON(200, gin.H{
             "message": "RV Contabilidade API",
-            "version": "1.0",
+            "version": "2.0",
             "docs":    "http://localhost:8080/swagger/index.html",
         })
     })

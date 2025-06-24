@@ -1,6 +1,15 @@
-# 📊 RV Contabilidade - Sistema de Gestão Backend
+# 📊 RV Contabilidade - Sistema de Gestão Backend v2.0
 
 Sistema completo de gestão contabilística com aprovação de clientes, desenvolvido em Go com Gin Framework seguindo **Clean Architecture**.
+
+## 🎯 Versão 2.0 - Clean Architecture
+
+### ✨ Principais Melhorias
+- **Clean Architecture** completa com separação clara de responsabilidades
+- **Tipos flexíveis** para conversão automática de strings/números
+- **Código organizado** por domínios e responsabilidades
+- **Melhor testabilidade** e manutenibilidade
+- **Documentação Swagger** atualizada
 
 ## 🏗️ Arquitetura do Sistema
 
@@ -139,18 +148,29 @@ DB_NAME=rv_contabilidade
 DB_SSL_MODE=disable
 ```
 
-### 4. Instalar Dependências
+### 4. Instalar Dependências e Compilar
 ```bash
+# Usando Makefile (recomendado)
+make install    # Instala dependências
+make docs      # Gera documentação Swagger
+make build     # Compila o projeto
+make run       # Executa o servidor
+
+# Ou manualmente
 go mod tidy
+~/go/bin/swag init  # Gerar Swagger
+go build
 ```
 
 ### 5. Executar Sistema
 ```bash
 # Modo desenvolvimento
+make run
+# ou
 go run main.go
 
-# Ou compilar e executar
-go build -o rvcontabilidade . && ./rvcontabilidade
+# Executar compilado
+make build && ./RVContabilidadeBack
 ```
 
 ### 6. Verificar Instalação
@@ -529,14 +549,27 @@ CREATE INDEX idx_registration_requests_nif ON registration_requests(nif);
 - ✅ Proteção contra SQL injection
 - ✅ Tokens JWT com informações mínimas necessárias
 
-## 🛡️ Segurança
+## 🔧 Tipos Flexíveis para Frontend/Backend
 
-- Passwords encriptadas com bcrypt
-- Tokens JWT com expiração
-- Validação de roles em todas as rotas protegidas
-- Verificação de status de utilizador em cada request
-- Headers CORS configurados
-- Validação de entrada com Gin binding
+### Problema Resolvido
+O sistema agora aceita tanto **strings quanto números** para campos numéricos nos DTOs, eliminando erros de parsing entre frontend e backend.
+
+### Campos Compatíveis
+- `estimated_revenue`: aceita `"50000.50"` ou `50000.50`
+- `monthly_invoices`: aceita `"15"` ou `15`
+- `number_employees`: aceita `"3"` ou `3`
+- `share_capital`: aceita `"5000.00"` ou `5000.00`
+- `annual_revenue`: aceita `"100000.75"` ou `100000.75`
+
+### Exemplo de Request
+```json
+{
+  "username": "joao.silva",
+  "estimated_revenue": "50000.50",  // ✅ String
+  "monthly_invoices": 15,           // ✅ Número
+  "share_capital": "5000"           // ✅ String convertida
+}
+```
 
 ## 🎯 Próximos Passos
 
@@ -609,6 +642,29 @@ CREATE INDEX idx_registration_requests_nif ON registration_requests(nif);
 5. **Swagger**: Documentar endpoint
 6. **Testar**: Verificar funcionamento
 
+## 🔧 Comandos de Desenvolvimento
+
+O projeto inclui um Makefile completo para facilitar o desenvolvimento:
+
+```bash
+# Comandos principais
+make help          # Mostrar todos os comandos disponíveis
+make install       # Instalar dependências
+make install-tools # Instalar ferramentas (swag, etc)
+make docs          # Gerar documentação Swagger
+make build         # Compilar aplicação
+make run           # Executar em modo desenvolvimento
+make test          # Executar testes
+make clean         # Limpar arquivos gerados
+make format        # Formatar código
+
+# Comandos avançados  
+make build-release # Compilar para produção
+make test-coverage # Testes com coverage
+make lint          # Linting do código
+make start         # Compilar e iniciar
+```
+
 ## 📄 Licença
 
 Este projeto está sob licença MIT. Ver ficheiro `LICENSE` para mais detalhes.
@@ -640,5 +696,13 @@ Para questões e suporte:
 
 ---
 
-**RV Contabilidade** - Sistema de Gestão Contabilística com Clean Architecture
-*Desenvolvido com ❤️ em Go*
+**RV Contabilidade v2.0** - Sistema de Gestão Contabilística com Clean Architecture  
+*Refatorado com ❤️ em Go • Junho 2025*
+
+### 📋 Changelog
+- ✅ Clean Architecture implementada
+- ✅ Tipos flexíveis para compatibilidade frontend/backend  
+- ✅ Código organizado por domínios
+- ✅ Documentação Swagger atualizada
+- ✅ Makefile completo para desenvolvimento
+- ✅ Testes e coverage melhorados

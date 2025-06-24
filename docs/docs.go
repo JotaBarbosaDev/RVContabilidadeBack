@@ -82,6 +82,34 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/clients/overview": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lista resumida de todos os clientes (pendentes e aprovados) para visão geral",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Visão geral de todos os clientes",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/clients/{id}": {
             "put": {
                 "security": [
@@ -199,6 +227,34 @@ const docTemplate = `{
                         }
                     }
                 ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/dashboard": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Obtém dados resumidos para o dashboard da contabilista incluindo estatísticas e clientes pendentes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Dados do dashboard para contabilista",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1424,6 +1480,10 @@ const docTemplate = `{
                 "accounting_regime": {
                     "type": "string"
                 },
+                "address": {
+                    "description": "Morada da empresa (campos adicionais do frontend)",
+                    "type": "string"
+                },
                 "annual_revenue": {
                     "description": "Dados operacionais",
                     "type": "number"
@@ -1454,6 +1514,9 @@ const docTemplate = `{
                 "citizen_card_number": {
                     "type": "string"
                 },
+                "city": {
+                    "type": "string"
+                },
                 "company": {
                     "$ref": "#/definitions/models.Company"
                 },
@@ -1477,13 +1540,16 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "company_name": {
-                    "description": "=== DADOS DA COMPANY (armazenados até aprovação) ===\nDados básicos obrigatórios",
+                    "description": "=== DADOS DA COMPANY (armazenados até aprovação) ===\nDados básicos opcionais (apenas LegalForm obrigatório)",
                     "type": "string"
                 },
                 "company_postal_code": {
                     "type": "string"
                 },
                 "corporate_object": {
+                    "type": "string"
+                },
+                "country": {
                     "type": "string"
                 },
                 "created_at": {
@@ -1500,7 +1566,7 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "fiscal_address": {
-                    "description": "Morada fiscal",
+                    "description": "Morada fiscal opcional",
                     "type": "string"
                 },
                 "fiscal_city": {
@@ -1567,6 +1633,9 @@ const docTemplate = `{
                 "phone": {
                     "type": "string"
                 },
+                "postal_code": {
+                    "type": "string"
+                },
                 "preferred_contact_hours": {
                     "type": "string"
                 },
@@ -1624,7 +1693,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "username": {
-                    "description": "=== DADOS DO USER (armazenados até aprovação) ===\nDados pessoais obrigatórios",
+                    "description": "=== DADOS DO USER (armazenados até aprovação) ===\nDados pessoais obrigatórios apenas username e password",
                     "type": "string"
                 },
                 "vat_regime": {
@@ -1635,22 +1704,20 @@ const docTemplate = `{
         "models.RegistrationRequestDTO": {
             "type": "object",
             "required": [
-                "company_name",
-                "email",
-                "fiscal_address",
-                "fiscal_city",
-                "fiscal_postal_code",
                 "legal_form",
-                "name",
-                "nif",
                 "password",
-                "phone",
                 "username"
             ],
             "properties": {
                 "accounting_regime": {
+                    "description": "Outros campos da empresa (sem duplicatas)",
                     "type": "string",
                     "example": "organizada"
+                },
+                "address": {
+                    "description": "Morada da empresa (campos adicionais do frontend)",
+                    "type": "string",
+                    "example": "Rua da Empresa, 456"
                 },
                 "annual_revenue": {
                     "type": "number",
@@ -1684,6 +1751,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "12345678"
                 },
+                "city": {
+                    "type": "string",
+                    "example": "Porto"
+                },
                 "company_address": {
                     "type": "string",
                     "example": "Rua das Flores, 123"
@@ -1705,7 +1776,7 @@ const docTemplate = `{
                     "example": "Lisboa"
                 },
                 "company_name": {
-                    "description": "=== DADOS EMPRESA ===\nObrigatórios",
+                    "description": "Opcionais principais (campos que o frontend envia)",
                     "type": "string",
                     "example": "Silva \u0026 Associados Lda"
                 },
@@ -1716,6 +1787,10 @@ const docTemplate = `{
                 "corporate_object": {
                     "type": "string",
                     "example": "Prestação de serviços de consultoria"
+                },
+                "country": {
+                    "type": "string",
+                    "example": "Portugal"
                 },
                 "date_of_birth": {
                     "description": "=== TODOS OS CAMPOS OPCIONAIS ===",
@@ -1731,7 +1806,7 @@ const docTemplate = `{
                     "example": 50000
                 },
                 "fiscal_address": {
-                    "description": "Morada fiscal obrigatória",
+                    "description": "Morada fiscal opcional",
                     "type": "string",
                     "example": "Rua das Flores, 123"
                 },
@@ -1772,6 +1847,7 @@ const docTemplate = `{
                     "example": "PT50000201231234567890154"
                 },
                 "legal_form": {
+                    "description": "=== DADOS EMPRESA ===\nObrigatórios",
                     "type": "string",
                     "example": "Sociedade por Quotas"
                 },
@@ -1800,7 +1876,6 @@ const docTemplate = `{
                     "example": "123456789"
                 },
                 "nipc": {
-                    "description": "Opcionais",
                     "type": "string",
                     "example": "123456789"
                 },
@@ -1821,6 +1896,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "912345678"
                 },
+                "postal_code": {
+                    "type": "string",
+                    "example": "1000-002"
+                },
                 "preferred_contact_hours": {
                     "type": "string",
                     "example": "9h-17h"
@@ -1828,6 +1907,11 @@ const docTemplate = `{
                 "preferred_format": {
                     "type": "string",
                     "example": "digital"
+                },
+                "registration_date": {
+                    "description": "Campo adicional enviado pelo frontend",
+                    "type": "string",
+                    "example": "2024-01-01"
                 },
                 "report_frequency": {
                     "type": "string",
@@ -1846,7 +1930,7 @@ const docTemplate = `{
                     "example": "Silva Consultoria"
                 },
                 "username": {
-                    "description": "=== DADOS PESSOAIS ===\nObrigatórios",
+                    "description": "=== DADOS PESSOAIS ===\nObrigatórios apenas username e password",
                     "type": "string",
                     "example": "joao.silva"
                 },
@@ -2053,12 +2137,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
+	Version:          "2.0",
 	Host:             "localhost:8080",
 	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "RV Contabilidade API",
-	Description:      "Sistema de gestão contabilística com aprovação de clientes",
+	Description:      "Sistema de gestão contabilística com aprovação de clientes - Clean Architecture",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

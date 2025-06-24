@@ -24,18 +24,45 @@ func (s *AdminService) GetPendingRequests() ([]models.PendingRequestResponseDTO,
 	var response []models.PendingRequestResponseDTO
 	for _, req := range requests {
 		dto := models.PendingRequestResponseDTO{
-			ID:          req.ID,
-			RequestType: req.RequestType,
-			Status:      req.Status,
-			SubmittedAt: req.SubmittedAt,
-			Username:    req.Username,
-			Name:        req.Name,
-			Email:       req.Email,
-			Phone:       req.Phone,
-			NIF:         req.NIF,
-			CompanyName: req.CompanyName,
-			NIPC:        req.NIPC,
+			ID:           req.ID,
+			RequestType:  req.RequestType,
+			Status:       req.Status,
+			SubmittedAt:  req.SubmittedAt,
+			Username:     req.Username,
+			NIPC:         req.NIPC,
+			LegalForm:    req.LegalForm,
 		}
+		
+		// Campos opcionais do usuário
+		if req.Name != nil {
+			dto.Name = *req.Name
+		}
+		if req.Email != nil {
+			dto.Email = *req.Email
+		}
+		if req.Phone != nil {
+			dto.Phone = *req.Phone
+		}
+		if req.NIF != nil {
+			dto.NIF = *req.NIF
+		}
+		
+		// Campos opcionais da empresa
+		if req.CompanyName != nil {
+			dto.CompanyName = *req.CompanyName
+		}
+		
+		// Campos opcionais da morada fiscal
+		if req.FiscalAddress != nil {
+			dto.FiscalAddress = *req.FiscalAddress
+		}
+		if req.FiscalPostalCode != nil {
+			dto.FiscalPostalCode = *req.FiscalPostalCode
+		}
+		if req.FiscalCity != nil {
+			dto.FiscalCity = *req.FiscalCity
+		}
+		
 		response = append(response, dto)
 	}
 
@@ -51,10 +78,10 @@ func (s *AdminService) GetAllRequests() ([]models.RegistrationRequest, error) {
 	return requests, nil
 }
 
-// GetRequestDetails obtém detalhes de um pedido específico
+// GetRequestDetails obtém detalhes completos de um pedido específico
 func (s *AdminService) GetRequestDetails(requestID uint) (*models.RegistrationRequest, error) {
 	var request models.RegistrationRequest
-	if err := config.DB.First(&request, requestID).Error; err != nil {
+	if err := config.DB.Preload("ReviewedByUser").First(&request, requestID).Error; err != nil {
 		return nil, errors.New("pedido não encontrado")
 	}
 	return &request, nil
@@ -205,17 +232,33 @@ func (s *AdminService) createUserAndCompany(request models.RegistrationRequest) 
 	// Criar User
 	user := models.User{
 		Username:            request.Username,
-		Email:               request.Email,
 		Password:            request.PasswordHash,
-		Name:                request.Name,
-		Phone:               request.Phone,
-		NIF:                 request.NIF,
 		Role:                "client",
 		Status:              "approved",
-		FiscalAddress:       request.FiscalAddress,
-		FiscalPostalCode:    request.FiscalPostalCode,
-		FiscalCity:          request.FiscalCity,
 		TaxResidenceCountry: "Portugal",
+	}
+
+	// Campos opcionais obrigatórios que podem existir
+	if request.Email != nil {
+		user.Email = *request.Email
+	}
+	if request.Name != nil {
+		user.Name = *request.Name
+	}
+	if request.Phone != nil {
+		user.Phone = *request.Phone
+	}
+	if request.NIF != nil {
+		user.NIF = *request.NIF
+	}
+	if request.FiscalAddress != nil {
+		user.FiscalAddress = *request.FiscalAddress
+	}
+	if request.FiscalPostalCode != nil {
+		user.FiscalPostalCode = *request.FiscalPostalCode
+	}
+	if request.FiscalCity != nil {
+		user.FiscalCity = *request.FiscalCity
 	}
 
 	// Campos opcionais do User
@@ -278,12 +321,16 @@ func (s *AdminService) createUserAndCompany(request models.RegistrationRequest) 
 
 	// Criar Company
 	company := models.Company{
-		UserID:      user.ID,
-		CompanyName: request.CompanyName,
-		NIPC:        request.NIPC,
-		LegalForm:   request.LegalForm,
-		Country:     "Portugal",
-		Status:      "active",
+		UserID:    user.ID,
+		NIPC:      request.NIPC,
+		LegalForm: request.LegalForm,
+		Country:   "Portugal",
+		Status:    "active",
+	}
+
+	// Campos opcionais da Company
+	if request.CompanyName != nil {
+		company.CompanyName = *request.CompanyName
 	}
 
 	// Campos opcionais da Company
@@ -584,18 +631,6 @@ func (s *AdminService) UpdateClientCompany(clientID uint, req models.AdminUpdate
 	if req.NumberEmployees != nil {
 		updateData["number_employees"] = *req.NumberEmployees
 	}
-	if req.ReportFrequency != nil {
-		updateData["report_frequency"] = *req.ReportFrequency
-	}
-	if req.HasStock != nil {
-		updateData["has_stock"] = *req.HasStock
-	}
-	if req.MainClients != nil {
-		updateData["main_clients"] = *req.MainClients
-	}
-	if req.MainSuppliers != nil {
-		updateData["main_suppliers"] = *req.MainSuppliers
-	}
 
 	if err := config.DB.Model(&company).Updates(updateData).Error; err != nil {
 		return nil, errors.New("erro ao atualizar dados da empresa")
@@ -641,4 +676,453 @@ func (s *AdminService) GetAllUsersSimple() ([]models.User, error) {
 	}
 
 	return users, nil
+}
+
+// GetDashboardData obtém dados resumidos para o dashboard
+func (s *AdminService) GetDashboardData() (*models.DashboardDataDTO, error) {
+	var dashboardData models.DashboardDataDTO
+	
+	// Contar solicitações pendentes
+	var pendingCount int64
+	if err := config.DB.Model(&models.RegistrationRequest{}).Where("status = ?", "pending").Count(&pendingCount).Error; err != nil {
+		return nil, errors.New("erro ao contar solicitações pendentes")
+	}
+	dashboardData.TotalPendingRequests = int(pendingCount)
+	
+	// Contar clientes aprovados
+	var approvedCount int64
+	if err := config.DB.Model(&models.User{}).Where("role = ? AND status = ?", "client", "approved").Count(&approvedCount).Error; err != nil {
+		return nil, errors.New("erro ao contar clientes aprovados")
+	}
+	dashboardData.TotalApprovedClients = int(approvedCount)
+	
+	// Contar solicitações rejeitadas
+	var rejectedCount int64
+	if err := config.DB.Model(&models.RegistrationRequest{}).Where("status = ?", "rejected").Count(&rejectedCount).Error; err != nil {
+		return nil, errors.New("erro ao contar solicitações rejeitadas")
+	}
+	dashboardData.TotalRejectedRequests = int(rejectedCount)
+	
+	// Obter solicitações pendentes recentes (últimas 10)
+	var recentRequests []models.RegistrationRequest
+	if err := config.DB.Where("status = ?", "pending").Order("submitted_at DESC").Limit(10).Find(&recentRequests).Error; err != nil {
+		return nil, errors.New("erro ao obter solicitações recentes")
+	}
+	
+	// Converter para DTO
+	for _, req := range recentRequests {
+		dto := models.PendingRequestResponseDTO{
+			ID:           req.ID,
+			RequestType:  req.RequestType,
+			Status:       req.Status,
+			SubmittedAt:  req.SubmittedAt,
+			Username:     req.Username,
+			NIPC:         req.NIPC,
+			LegalForm:    req.LegalForm,
+		}
+		
+		// Campos opcionais
+		if req.Name != nil {
+			dto.Name = *req.Name
+		}
+		if req.Email != nil {
+			dto.Email = *req.Email
+		}
+		if req.Phone != nil {
+			dto.Phone = *req.Phone
+		}
+		if req.NIF != nil {
+			dto.NIF = *req.NIF
+		}
+		if req.CompanyName != nil {
+			dto.CompanyName = *req.CompanyName
+		}
+		if req.FiscalAddress != nil {
+			dto.FiscalAddress = *req.FiscalAddress
+		}
+		if req.FiscalPostalCode != nil {
+			dto.FiscalPostalCode = *req.FiscalPostalCode
+		}
+		if req.FiscalCity != nil {
+			dto.FiscalCity = *req.FiscalCity
+		}
+		
+		dashboardData.RecentPendingRequests = append(dashboardData.RecentPendingRequests, dto)
+	}
+	
+	// Estatísticas do mês atual
+	now := time.Now()
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	
+	// Novas solicitações neste mês
+	var monthlyNew int64
+	if err := config.DB.Model(&models.RegistrationRequest{}).Where("submitted_at >= ?", startOfMonth).Count(&monthlyNew).Error; err != nil {
+		return nil, errors.New("erro ao contar solicitações mensais")
+	}
+	dashboardData.MonthlyStats.NewRequests = int(monthlyNew)
+	
+	// Aprovações neste mês
+	var monthlyApproved int64
+	if err := config.DB.Model(&models.RegistrationRequest{}).Where("status = ? AND reviewed_at >= ?", "approved", startOfMonth).Count(&monthlyApproved).Error; err != nil {
+		return nil, errors.New("erro ao contar aprovações mensais")
+	}
+	dashboardData.MonthlyStats.ApprovedClients = int(monthlyApproved)
+	
+	// Rejeições neste mês
+	var monthlyRejected int64
+	if err := config.DB.Model(&models.RegistrationRequest{}).Where("status = ? AND reviewed_at >= ?", "rejected", startOfMonth).Count(&monthlyRejected).Error; err != nil {
+		return nil, errors.New("erro ao contar rejeições mensais")
+	}
+	dashboardData.MonthlyStats.RejectedRequests = int(monthlyRejected)
+	
+	return &dashboardData, nil
+}
+
+// GetAllClientsOverview obtém visão geral de todos os clientes
+func (s *AdminService) GetAllClientsOverview() (*models.ClientsOverviewDTO, error) {
+	var overview models.ClientsOverviewDTO
+	
+	// Obter clientes pendentes
+	pendingRequests, err := s.GetPendingRequests()
+	if err != nil {
+		return nil, err
+	}
+	overview.PendingClients = pendingRequests
+	
+	// Obter clientes aprovados
+	var approvedUsers []models.User
+	if err := config.DB.Where("role = ? AND status = ?", "client", "approved").Find(&approvedUsers).Error; err != nil {
+		return nil, errors.New("erro ao obter clientes aprovados")
+	}
+	
+	// Para cada cliente aprovado, buscar a empresa e converter para resumo
+	for _, user := range approvedUsers {
+		var company models.Company
+		companyName := ""
+		nipc := ""
+		
+		if config.DB.Where("user_id = ?", user.ID).First(&company).Error == nil {
+			companyName = company.CompanyName
+			nipc = company.NIPC
+		}
+		
+		approvedClient := struct {
+			ID          uint   `json:"id" example:"1"`
+			Username    string `json:"username" example:"joao.silva"`
+			Name        string `json:"name" example:"João Silva"`
+			Email       string `json:"email" example:"joao@exemplo.com"`
+			Phone       string `json:"phone" example:"912345678"`
+			NIF         string `json:"nif" example:"123456789"`
+			Status      string `json:"status" example:"approved"`
+			CompanyName string `json:"company_name" example:"Silva & Associados Lda"`
+			NIPC        string `json:"nipc" example:"123456789"`
+			CreatedAt   string `json:"created_at" example:"2024-01-01T00:00:00Z"`
+		}{
+			ID:          user.ID,
+			Username:    user.Username,
+			Name:        user.Name,
+			Email:       user.Email,
+			Phone:       user.Phone,
+			NIF:         user.NIF,
+			Status:      user.Status,
+			CompanyName: companyName,
+			NIPC:        nipc,
+			CreatedAt:   user.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		}
+		
+		overview.ApprovedClients = append(overview.ApprovedClients, approvedClient)
+	}
+	
+	// Calcular estatísticas
+	overview.Stats.TotalPending = len(overview.PendingClients)
+	overview.Stats.TotalApproved = len(overview.ApprovedClients)
+	
+	// Contar rejeitados
+	var rejectedCount int64
+	if err := config.DB.Model(&models.RegistrationRequest{}).Where("status = ?", "rejected").Count(&rejectedCount).Error; err != nil {
+		return nil, errors.New("erro ao contar solicitações rejeitadas")
+	}
+	overview.Stats.TotalRejected = int(rejectedCount)
+	
+	return &overview, nil
+}
+
+// GetCompleteUsersOverview obtém todos os dados de todos os utilizadores das 3 tabelas
+func (s *AdminService) GetCompleteUsersOverview() ([]models.CompleteUserOverviewDTO, error) {
+	var result []models.CompleteUserOverviewDTO
+	
+	// 1. Buscar todos os users aprovados com companies
+	var users []models.User
+	if err := config.DB.Preload("Company").Where("status = ?", "approved").Find(&users).Error; err != nil {
+		return nil, errors.New("erro ao obter utilizadores aprovados")
+	}
+	
+	// 2. Buscar todas as registration_requests
+	var requests []models.RegistrationRequest
+	if err := config.DB.Preload("ReviewedByUser").Find(&requests).Error; err != nil {
+		return nil, errors.New("erro ao obter solicitações de registo")
+	}
+	
+	// 3. Criar mapa de requests por user_id para fácil acesso
+	requestsByUserID := make(map[uint]*models.RegistrationRequest)
+	requestsByUsername := make(map[string]*models.RegistrationRequest)
+	
+	for i := range requests {
+		req := &requests[i]
+		if req.UserID != nil {
+			requestsByUserID[*req.UserID] = req
+		}
+		// Também indexar por username para requests sem user_id
+		requestsByUsername[req.Username] = req
+	}
+	
+	// 4. Processar users aprovados
+	for _, user := range users {
+		dto := models.CompleteUserOverviewDTO{
+			// Identificação
+			ID:       user.ID,
+			Username: user.Username,
+			Status:   user.Status,
+			Role:     user.Role,
+			
+			// Dados pessoais (prioridade: User)
+			Name:                stringPtr(user.Name),
+			Email:               stringPtr(user.Email),
+			Phone:               stringPtr(user.Phone),
+			NIF:                 stringPtr(user.NIF),
+			DateOfBirth:         user.DateOfBirth,
+			MaritalStatus:       stringPtr(user.MaritalStatus),
+			CitizenCardNumber:   stringPtr(user.CitizenCardNumber),
+			CitizenCardExpiry:   user.CitizenCardExpiry,
+			TaxResidenceCountry: stringPtr(user.TaxResidenceCountry),
+			FixedPhone:          stringPtr(user.FixedPhone),
+			
+			// Morada fiscal
+			FiscalAddress:    stringPtr(user.FiscalAddress),
+			FiscalPostalCode: stringPtr(user.FiscalPostalCode),
+			FiscalCity:       stringPtr(user.FiscalCity),
+			FiscalCounty:     stringPtr(user.FiscalCounty),
+			FiscalDistrict:   stringPtr(user.FiscalDistrict),
+			
+			// Preferências
+			OfficialEmail:         stringPtr(user.OfficialEmail),
+			BillingSoftware:       stringPtr(user.BillingSoftware),
+			PreferredFormat:       stringPtr(user.PreferredFormat),
+			ReportFrequency:       stringPtr(user.ReportFrequency),
+			PreferredContactHours: stringPtr(user.PreferredContactHours),
+			
+			// Timestamps do user
+			UserCreatedAt: &user.CreatedAt,
+			UserUpdatedAt: &user.UpdatedAt,
+		}
+		
+		// Dados da empresa (se existir)
+		if user.Company != nil {
+			company := user.Company
+			dto.CompanyID = &company.ID
+			dto.CompanyName = stringPtr(company.CompanyName)
+			dto.TradeName = stringPtr(company.TradeName)
+			dto.NIPC = stringPtr(company.NIPC)
+			dto.LegalForm = stringPtr(company.LegalForm)
+			dto.CAE = stringPtr(company.CAE)
+			dto.FoundingDate = company.FoundingDate
+			dto.ShareCapital = float64Ptr(company.ShareCapital)
+			dto.CompanyStatus = stringPtr(company.Status)
+			
+			// Configurações contabilísticas
+			dto.AccountingRegime = stringPtr(company.AccountingRegime)
+			dto.VATRegime = stringPtr(company.VATRegime)
+			dto.BusinessActivity = stringPtr(company.BusinessActivity)
+			dto.EstimatedRevenue = float64Ptr(company.EstimatedRevenue)
+			dto.MonthlyInvoices = intPtr(company.MonthlyInvoices)
+			dto.NumberEmployees = intPtr(company.NumberEmployees)
+			
+			// Detalhes da empresa
+			dto.CorporateObject = stringPtr(company.CorporateObject)
+			
+			// Morada da empresa
+			dto.CompanyAddress = stringPtr(company.Address)
+			dto.CompanyPostalCode = stringPtr(company.PostalCode)
+			dto.CompanyCity = stringPtr(company.City)
+			dto.CompanyCounty = stringPtr(company.County)
+			dto.CompanyDistrict = stringPtr(company.District)
+			dto.CompanyCountry = stringPtr(company.Country)
+			dto.GroupStartDate = company.GroupStartDate
+			
+			// Informação bancária
+			dto.BankName = stringPtr(company.BankName)
+			dto.IBAN = stringPtr(company.IBAN)
+			dto.BIC = stringPtr(company.BIC)
+			
+			// Dados operacionais
+			dto.AnnualRevenue = float64Ptr(company.AnnualRevenue)
+			dto.HasStock = boolPtr(company.HasStock)
+			dto.MainClients = stringPtr(company.MainClients)
+			dto.MainSuppliers = stringPtr(company.MainSuppliers)
+			
+			// Timestamps da empresa
+			dto.CompanyCreatedAt = &company.CreatedAt
+			dto.CompanyUpdatedAt = &company.UpdatedAt
+		}
+		
+		// Dados da registration_request (se existir)
+		if req, exists := requestsByUserID[user.ID]; exists {
+			dto.Source = "both"
+			dto.RequestID = &req.ID
+			dto.RequestType = &req.RequestType
+			dto.RequestStatus = &req.Status
+			dto.SubmittedAt = &req.SubmittedAt
+			dto.ReviewedAt = req.ReviewedAt
+			dto.ReviewedBy = req.ReviewedBy
+			dto.ReviewNotes = stringPtr(req.ReviewNotes)
+			
+			if req.ReviewedByUser != nil {
+				dto.ReviewedByName = stringPtr(req.ReviewedByUser.Name)
+			}
+			
+			// Dados adicionais da request que podem não estar em User/Company
+			if dto.Address == nil && req.Address != nil {
+				dto.Address = req.Address
+			}
+			if dto.PostalCode == nil && req.PostalCode != nil {
+				dto.PostalCode = req.PostalCode
+			}
+			if dto.City == nil && req.City != nil {
+				dto.City = req.City
+			}
+			if dto.Country == nil && req.Country != nil {
+				dto.Country = req.Country
+			}
+			
+			// Timestamps da request
+			dto.RequestCreatedAt = &req.CreatedAt
+			dto.RequestUpdatedAt = &req.UpdatedAt
+		} else {
+			dto.Source = "user_only"
+		}
+		
+		result = append(result, dto)
+	}
+	
+	// 5. Processar requests pendentes/rejeitadas que não têm user associado
+	for _, req := range requests {
+		if req.UserID == nil && (req.Status == "pending" || req.Status == "rejected") {
+			dto := models.CompleteUserOverviewDTO{
+				// Identificação
+				Username: req.Username,
+				Status:   req.Status,
+				Role:     "client",
+				Source:   "registration_request",
+				
+				// Dados da request
+				RequestID:     &req.ID,
+				RequestType:   &req.RequestType,
+				RequestStatus: &req.Status,
+				SubmittedAt:   &req.SubmittedAt,
+				ReviewedAt:    req.ReviewedAt,
+				ReviewedBy:    req.ReviewedBy,
+				ReviewNotes:   stringPtr(req.ReviewNotes),
+				
+				// Dados pessoais da request
+				Name:                req.Name,
+				Email:               req.Email,
+				Phone:               req.Phone,
+				NIF:                 req.NIF,
+				DateOfBirth:         req.DateOfBirth,
+				MaritalStatus:       req.MaritalStatus,
+				CitizenCardNumber:   req.CitizenCardNumber,
+				CitizenCardExpiry:   req.CitizenCardExpiry,
+				TaxResidenceCountry: req.TaxResidenceCountry,
+				FixedPhone:          req.FixedPhone,
+				
+				// Morada fiscal
+				FiscalAddress:    req.FiscalAddress,
+				FiscalPostalCode: req.FiscalPostalCode,
+				FiscalCity:       req.FiscalCity,
+				FiscalCounty:     req.FiscalCounty,
+				FiscalDistrict:   req.FiscalDistrict,
+				
+				// Morada pessoal/empresa
+				Address:    req.Address,
+				PostalCode: req.PostalCode,
+				City:       req.City,
+				Country:    req.Country,
+				
+				// Preferências
+				OfficialEmail:         req.OfficialEmail,
+				BillingSoftware:       req.BillingSoftware,
+				PreferredFormat:       req.PreferredFormat,
+				ReportFrequency:       req.ReportFrequency,
+				PreferredContactHours: req.PreferredContactHours,
+				
+				// Dados da empresa
+				CompanyName:      req.CompanyName,
+				TradeName:        req.TradeName,
+				NIPC:             stringPtr(req.NIPC),
+				LegalForm:        stringPtr(req.LegalForm),
+				CAE:              req.CAE,
+				FoundingDate:     req.FoundingDate,
+				ShareCapital:     req.ShareCapital,
+				AccountingRegime: req.AccountingRegime,
+				VATRegime:        req.VATRegime,
+				BusinessActivity: req.BusinessActivity,
+				EstimatedRevenue: req.EstimatedRevenue,
+				MonthlyInvoices:  req.MonthlyInvoices,
+				NumberEmployees:  req.NumberEmployees,
+				CorporateObject:  req.CorporateObject,
+				CompanyAddress:   req.CompanyAddress,
+				CompanyPostalCode: req.CompanyPostalCode,
+				CompanyCity:      req.CompanyCity,
+				CompanyCounty:    req.CompanyCounty,
+				CompanyDistrict:  req.CompanyDistrict,
+				CompanyCountry:   req.CompanyCountry,
+				GroupStartDate:   req.GroupStartDate,
+				BankName:         req.BankName,
+				IBAN:             req.IBAN,
+				BIC:              req.BIC,
+				AnnualRevenue:    req.AnnualRevenue,
+				HasStock:         req.HasStock,
+				MainClients:      req.MainClients,
+				MainSuppliers:    req.MainSuppliers,
+				
+				// Timestamps da request
+				RequestCreatedAt: &req.CreatedAt,
+				RequestUpdatedAt: &req.UpdatedAt,
+			}
+			
+			if req.ReviewedByUser != nil {
+				dto.ReviewedByName = stringPtr(req.ReviewedByUser.Name)
+			}
+			
+			result = append(result, dto)
+		}
+	}
+	
+	return result, nil
+}
+
+// Funções auxiliares para criar ponteiros
+func stringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func float64Ptr(f float64) *float64 {
+	if f == 0 {
+		return nil
+	}
+	return &f
+}
+
+func intPtr(i int) *int {
+	if i == 0 {
+		return nil
+	}
+	return &i
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }

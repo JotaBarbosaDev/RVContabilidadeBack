@@ -377,6 +377,9 @@ definitions:
     properties:
       accounting_regime:
         type: string
+      address:
+        description: Morada da empresa (campos adicionais do frontend)
+        type: string
       annual_revenue:
         description: Dados operacionais
         type: number
@@ -398,6 +401,8 @@ definitions:
         type: string
       citizen_card_number:
         type: string
+      city:
+        type: string
       company:
         $ref: '#/definitions/models.Company'
       company_address:
@@ -416,11 +421,13 @@ definitions:
       company_name:
         description: |-
           === DADOS DA COMPANY (armazenados até aprovação) ===
-          Dados básicos obrigatórios
+          Dados básicos opcionais (apenas LegalForm obrigatório)
         type: string
       company_postal_code:
         type: string
       corporate_object:
+        type: string
+      country:
         type: string
       created_at:
         type: string
@@ -432,7 +439,7 @@ definitions:
       estimated_revenue:
         type: number
       fiscal_address:
-        description: Morada fiscal
+        description: Morada fiscal opcional
         type: string
       fiscal_city:
         type: string
@@ -477,6 +484,8 @@ definitions:
         type: string
       phone:
         type: string
+      postal_code:
+        type: string
       preferred_contact_hours:
         type: string
       preferred_format:
@@ -517,7 +526,7 @@ definitions:
       username:
         description: |-
           === DADOS DO USER (armazenados até aprovação) ===
-          Dados pessoais obrigatórios
+          Dados pessoais obrigatórios apenas username e password
         type: string
       vat_regime:
         type: string
@@ -525,7 +534,12 @@ definitions:
   models.RegistrationRequestDTO:
     properties:
       accounting_regime:
+        description: Outros campos da empresa (sem duplicatas)
         example: organizada
+        type: string
+      address:
+        description: Morada da empresa (campos adicionais do frontend)
+        example: Rua da Empresa, 456
         type: string
       annual_revenue:
         example: 100000
@@ -551,6 +565,9 @@ definitions:
       citizen_card_number:
         example: "12345678"
         type: string
+      city:
+        example: Porto
+        type: string
       company_address:
         example: Rua das Flores, 123
         type: string
@@ -567,9 +584,7 @@ definitions:
         example: Lisboa
         type: string
       company_name:
-        description: |-
-          === DADOS EMPRESA ===
-          Obrigatórios
+        description: Opcionais principais (campos que o frontend envia)
         example: Silva & Associados Lda
         type: string
       company_postal_code:
@@ -577,6 +592,9 @@ definitions:
         type: string
       corporate_object:
         example: Prestação de serviços de consultoria
+        type: string
+      country:
+        example: Portugal
         type: string
       date_of_birth:
         description: === TODOS OS CAMPOS OPCIONAIS ===
@@ -589,7 +607,7 @@ definitions:
         example: 50000
         type: number
       fiscal_address:
-        description: Morada fiscal obrigatória
+        description: Morada fiscal opcional
         example: Rua das Flores, 123
         type: string
       fiscal_city:
@@ -620,6 +638,9 @@ definitions:
         example: PT50000201231234567890154
         type: string
       legal_form:
+        description: |-
+          === DADOS EMPRESA ===
+          Obrigatórios
         example: Sociedade por Quotas
         type: string
       main_clients:
@@ -641,7 +662,6 @@ definitions:
         example: "123456789"
         type: string
       nipc:
-        description: Opcionais
         example: "123456789"
         type: string
       number_employees:
@@ -657,11 +677,18 @@ definitions:
       phone:
         example: "912345678"
         type: string
+      postal_code:
+        example: 1000-002
+        type: string
       preferred_contact_hours:
         example: 9h-17h
         type: string
       preferred_format:
         example: digital
+        type: string
+      registration_date:
+        description: Campo adicional enviado pelo frontend
+        example: "2024-01-01"
         type: string
       report_frequency:
         example: mensal
@@ -678,23 +705,15 @@ definitions:
       username:
         description: |-
           === DADOS PESSOAIS ===
-          Obrigatórios
+          Obrigatórios apenas username e password
         example: joao.silva
         type: string
       vat_regime:
         example: normal
         type: string
     required:
-    - company_name
-    - email
-    - fiscal_address
-    - fiscal_city
-    - fiscal_postal_code
     - legal_form
-    - name
-    - nif
     - password
-    - phone
     - username
     type: object
   models.SuccessResponse:
@@ -830,9 +849,10 @@ definitions:
 host: localhost:8080
 info:
   contact: {}
-  description: Sistema de gestão contabilística com aprovação de clientes
+  description: Sistema de gestão contabilística com aprovação de clientes - Clean
+    Architecture
   title: RV Contabilidade API
-  version: "1.0"
+  version: "2.0"
 paths:
   /admin/approve-request:
     post:
@@ -955,6 +975,42 @@ paths:
       summary: Atualizar empresa do cliente
       tags:
       - admin
+  /admin/clients/overview:
+    get:
+      consumes:
+      - application/json
+      description: Lista resumida de todos os clientes (pendentes e aprovados) para
+        visão geral
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Visão geral de todos os clientes
+      tags:
+      - admin
+  /admin/dashboard:
+    get:
+      consumes:
+      - application/json
+      description: Obtém dados resumidos para o dashboard da contabilista incluindo
+        estatísticas e clientes pendentes
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Dados do dashboard para contabilista
+      tags:
+      - admin
   /admin/pending-requests:
     get:
       consumes:
@@ -970,6 +1026,23 @@ paths:
       security:
       - BearerAuth: []
       summary: Listar solicitações pendentes
+      tags:
+      - admin
+  /admin/complete-users-overview:
+    get:
+      consumes:
+      - application/json
+      description: Lista todos os usuários com dados combinados de users, registration_requests e companies (apenas contabilistas/admin)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar visão completa de todos os usuários
       tags:
       - admin
   /admin/requests:
