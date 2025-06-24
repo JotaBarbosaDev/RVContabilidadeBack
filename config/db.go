@@ -3,6 +3,7 @@ package config
 import (
 	"RVContabilidadeBack/models"
 	"fmt"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
@@ -30,13 +31,7 @@ func ConnectDatabase() {
 }
 
 func migrate() {
-	// Primeiro, fazer migração personalizada do username para utilizadores existentes
-	if err := migrateUsernameField(); err != nil {
-		fmt.Printf("❌ Erro na migração personalizada do username: %v\n", err)
-		return
-	}
-	
-	// Criar tabelas automaticamente baseadas nos models
+	// Primeiro, criar tabelas automaticamente baseadas nos models
 	err := DB.AutoMigrate(
 		&models.User{},
 		&models.Company{},
@@ -44,12 +39,19 @@ func migrate() {
 	)
 	if err != nil {
 		fmt.Printf("❌ Erro na migração: %v\n", err)
-	} else {
-		fmt.Println("✅ Migração das tabelas concluída")
-		
-		// Criar utilizador admin se não existir
-		createDefaultAdmin()
+		return
 	}
+	
+	fmt.Println("✅ Migração das tabelas concluída")
+	
+	// Depois, fazer migração personalizada do username (se necessário)
+	if err := migrateUsernameField(); err != nil {
+		fmt.Printf("❌ Erro na migração personalizada do username: %v\n", err)
+		// Não retornar aqui para permitir que continue
+	}
+	
+	// Criar utilizador admin se não existir
+	createDefaultAdmin()
 }
 
 func createDefaultAdmin() {
@@ -102,38 +104,32 @@ func createDefaultAdmin() {
 
 // migrateUsernameField faz a migração do campo username de forma segura
 func migrateUsernameField() error {
-	// Verificar se a coluna username já existe
-	var count int64
-	err := DB.Raw("SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'username'").Scan(&count).Error
+	// Como o GORM já criou a tabela, só precisamos verificar se há utilizadores sem username
+	var usersWithoutUsername []models.User
+	err := DB.Where("username IS NULL OR username = ''").Find(&usersWithoutUsername).Error
 	if err != nil {
 		return err
 	}
 	
-	if count == 0 {
-		// Coluna não existe, vamos criá-la
-		fmt.Println("🔄 Adicionando coluna username...")
+	if len(usersWithoutUsername) > 0 {
+		fmt.Printf("🔄 Migrando %d utilizadores sem username...\n", len(usersWithoutUsername))
 		
-		// 1. Adicionar coluna sem NOT NULL
-		if err := DB.Exec("ALTER TABLE users ADD COLUMN username VARCHAR(255)").Error; err != nil {
-			return err
+		for _, user := range usersWithoutUsername {
+			// Gerar username baseado no email
+			username := strings.Split(user.Email, "@")[0]
+			
+			// Verificar se já existe, se sim adicionar número
+			var count int64
+			DB.Model(&models.User{}).Where("username = ?", username).Count(&count)
+			if count > 0 {
+				username = fmt.Sprintf("%s_%d", username, user.ID)
+			}
+			
+			// Atualizar o utilizador
+			DB.Model(&user).Update("username", username)
 		}
 		
-		// 2. Atualizar registos existentes com valores baseados no email
-		if err := DB.Exec("UPDATE users SET username = SPLIT_PART(email, '@', 1) WHERE username IS NULL").Error; err != nil {
-			return err
-		}
-		
-		// 3. Tornar a coluna NOT NULL e UNIQUE
-		if err := DB.Exec("ALTER TABLE users ALTER COLUMN username SET NOT NULL").Error; err != nil {
-			return err
-		}
-		
-		if err := DB.Exec("ALTER TABLE users ADD CONSTRAINT users_username_key UNIQUE (username)").Error; err != nil {
-			// Se já existe, ignorar erro
-			fmt.Println("⚠️  Constraint UNIQUE já existe para username")
-		}
-		
-		fmt.Println("✅ Coluna username adicionada e migrada com sucesso")
+		fmt.Println("✅ Migração de usernames concluída")
 	}
 	
 	return nil

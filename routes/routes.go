@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"RVContabilidadeBack/handlers"
+	"RVContabilidadeBack/controllers"
 	"RVContabilidadeBack/middlewares"
 
 	"github.com/gin-gonic/gin"
@@ -20,18 +20,18 @@ func SetupRoutes() *gin.Engine {
         // Rotas de autenticação (públicas)
         auth := api.Group("/auth")
         {
-            auth.POST("/register", handlers.RegisterClient)      // Novo endpoint principal
-            auth.POST("/register-direct", handlers.Register)     // Registo direto (interno)
-            auth.POST("/login", handlers.Login)
+            auth.POST("/register", controllers.RegisterClient)      // Novo endpoint principal
+            auth.POST("/register-direct", controllers.Register)     // Registo direto (interno)
+            auth.POST("/login", controllers.Login)
             // Logout (protegida - requer token)
-            auth.POST("/logout", middlewares.AuthMiddleware(), handlers.Logout)
+            auth.POST("/logout", middlewares.AuthMiddleware(), controllers.Logout)
         }
 
         // Rotas protegidas gerais (todos os utilizadores autenticados)
         protected := api.Group("/")
         protected.Use(middlewares.AuthMiddleware())
         {
-            protected.GET("/profile", handlers.GetProfile)
+            protected.GET("/profile", controllers.GetProfile)
         }
 
         // Rotas para administração (contabilistas e admins)
@@ -40,14 +40,22 @@ func SetupRoutes() *gin.Engine {
         admin.Use(middlewares.RequireRole("accountant", "admin"))
         {
             // Gestão de solicitações
-            admin.GET("/pending-requests", handlers.GetPendingRequests)
-            admin.POST("/approve-request", handlers.ApproveRequest)
-            admin.GET("/requests", handlers.GetAllRequests)
-            admin.GET("/requests/:id", handlers.GetRequestDetails)
+            admin.GET("/pending-requests", controllers.GetPendingRequests)
+            admin.POST("/approve-request", controllers.ApproveRequest)
+            admin.GET("/requests", controllers.GetAllRequests)
+            admin.GET("/requests/:id", controllers.GetRequestDetails)
             
             // Gestão de utilizadores
-            admin.GET("/users", handlers.GetAllUsers)
-            admin.GET("/users/:id", handlers.GetUserDetails)
+            admin.GET("/users", controllers.GetAllUsers)
+            admin.GET("/users/count", controllers.GetUsersCount)
+            admin.GET("/users/simple", controllers.GetAllUsersSimple)
+            admin.GET("/users/:id", controllers.GetUserDetails)
+            
+            // Gestão de clientes aprovados
+            admin.GET("/clients", controllers.GetApprovedClients)
+            admin.PUT("/clients/:id", controllers.UpdateClientData)
+            admin.PUT("/clients/:id/company", controllers.AdminUpdateClientCompany) 
+            admin.DELETE("/clients/:id", controllers.DeleteClient)
         }
 
         // Rotas apenas para admins
@@ -55,7 +63,7 @@ func SetupRoutes() *gin.Engine {
         adminOnly.Use(middlewares.AuthMiddleware())
         adminOnly.Use(middlewares.RequireRole("admin"))
         {
-            adminOnly.PUT("/users/:id/status", handlers.UpdateUserStatus)
+            adminOnly.PUT("/users/:id/status", controllers.UpdateUserStatus)
         }
 
         // Rotas para clientes (apenas clientes aprovados)
@@ -63,19 +71,19 @@ func SetupRoutes() *gin.Engine {
         client.Use(middlewares.AuthMiddleware())
         client.Use(middlewares.RequireRole("client"))
         {
-            client.GET("/profile", handlers.GetClientProfile)
-            client.PUT("/profile", handlers.UpdateClientProfile)
-            client.GET("/company", handlers.GetClientCompany)
-            client.PUT("/company", handlers.UpdateClientCompany)
-            client.GET("/requests", handlers.GetClientRequests)
+            client.GET("/profile", controllers.GetClientProfile)
+            client.PUT("/profile", controllers.UpdateClientProfile)
+            client.GET("/company", controllers.GetClientCompany)
+            client.PUT("/company", controllers.UpdateClientCompany)
+            client.GET("/requests", controllers.GetClientRequests)
             
             // Novos endpoints para completar dados após aprovação
-            client.POST("/complete-user-data", handlers.CompleteUserData)
-            client.POST("/complete-company-data", handlers.CompleteCompanyData)
+            client.POST("/complete-user-data", controllers.CompleteUserData)
+            client.POST("/complete-company-data", controllers.CompleteCompanyData)
         }
 
         // Rota de informações da API (pública)
-        api.GET("/info", handlers.GetAPIInfo)
+        api.GET("/info", controllers.GetAPIInfo)
     }
 
     // Rota de health check

@@ -1,5 +1,110 @@
 basePath: /api
 definitions:
+  models.AdminUpdateClientDTO:
+    properties:
+      billing_software:
+        type: string
+      citizen_card_expiry:
+        type: string
+      citizen_card_number:
+        type: string
+      date_of_birth:
+        type: string
+      email:
+        type: string
+      fiscal_address:
+        description: Morada fiscal
+        type: string
+      fiscal_city:
+        type: string
+      fiscal_county:
+        type: string
+      fiscal_district:
+        type: string
+      fiscal_postal_code:
+        type: string
+      fixed_phone:
+        type: string
+      marital_status:
+        type: string
+      name:
+        description: Dados pessoais que admin pode editar
+        type: string
+      nif:
+        type: string
+      official_email:
+        description: Configurações
+        type: string
+      phone:
+        type: string
+      preferred_contact_hours:
+        type: string
+      preferred_format:
+        type: string
+      status:
+        type: string
+    type: object
+  models.AdminUpdateCompanyDTO:
+    properties:
+      accounting_regime:
+        description: Regimes
+        type: string
+      address:
+        description: Morada da empresa
+        type: string
+      annual_revenue:
+        type: number
+      bank_name:
+        type: string
+      bic:
+        type: string
+      business_activity:
+        description: Operacionais
+        type: string
+      cae:
+        type: string
+      city:
+        type: string
+      company_name:
+        type: string
+      corporate_object:
+        type: string
+      county:
+        type: string
+      district:
+        type: string
+      estimated_revenue:
+        type: number
+      founding_date:
+        type: string
+      has_stock:
+        type: boolean
+      iban:
+        type: string
+      legal_form:
+        type: string
+      main_clients:
+        type: string
+      main_suppliers:
+        type: string
+      monthly_invoices:
+        type: integer
+      nipc:
+        type: string
+      number_employees:
+        type: integer
+      postal_code:
+        type: string
+      report_frequency:
+        type: string
+      share_capital:
+        description: Dados financeiros
+        type: number
+      trade_name:
+        type: string
+      vat_regime:
+        type: string
+    type: object
   models.ApprovalRequestDTO:
     properties:
       request_id:
@@ -29,12 +134,11 @@ definitions:
   models.Company:
     properties:
       accounting_regime:
-        description: Regime contabilístico e fiscal (obrigatórios)
         type: string
       address:
         type: string
       annual_revenue:
-        description: Dados operacionais completos
+        description: Dados operacionais
         type: number
       bank_name:
         description: Informação bancária
@@ -42,14 +146,13 @@ definitions:
       bic:
         type: string
       business_activity:
-        description: Dados operacionais básicos
         type: string
       cae:
         type: string
       city:
         type: string
       company_name:
-        description: Dados básicos (obrigatórios no registo)
+        description: Dados copiados da RegistrationRequest após aprovação
         type: string
       corporate_object:
         type: string
@@ -87,18 +190,23 @@ definitions:
         type: integer
       postal_code:
         type: string
+      registration_request:
+        $ref: '#/definitions/models.RegistrationRequest'
       share_capital:
         type: number
       status:
         type: string
       trade_name:
-        description: Dados completos (preenchidos depois da aprovação)
+        description: Dados completos
         type: string
       updated_at:
         type: string
       user:
-        $ref: '#/definitions/models.User'
+        allOf:
+        - $ref: '#/definitions/models.User'
+        description: Relacionamentos
       user_id:
+        description: One-to-One com User
         type: integer
       vat_regime:
         type: string
@@ -267,13 +375,113 @@ definitions:
     type: object
   models.RegistrationRequest:
     properties:
+      accounting_regime:
+        type: string
+      annual_revenue:
+        description: Dados operacionais
+        type: number
       approval_token:
+        type: string
+      bank_name:
+        description: Informação bancária
+        type: string
+      bic:
+        type: string
+      billing_software:
+        type: string
+      business_activity:
+        type: string
+      cae:
+        description: Dados básicos opcionais
+        type: string
+      citizen_card_expiry:
+        type: string
+      citizen_card_number:
+        type: string
+      company:
+        $ref: '#/definitions/models.Company'
+      company_address:
+        type: string
+      company_city:
+        type: string
+      company_country:
+        type: string
+      company_county:
+        type: string
+      company_district:
+        type: string
+      company_id:
+        description: NULL até aprovação
+        type: integer
+      company_name:
+        description: |-
+          === DADOS DA COMPANY (armazenados até aprovação) ===
+          Dados básicos obrigatórios
+        type: string
+      company_postal_code:
+        type: string
+      corporate_object:
         type: string
       created_at:
         type: string
+      date_of_birth:
+        description: Dados pessoais opcionais
+        type: string
+      email:
+        type: string
+      estimated_revenue:
+        type: number
+      fiscal_address:
+        description: Morada fiscal
+        type: string
+      fiscal_city:
+        type: string
+      fiscal_county:
+        type: string
+      fiscal_district:
+        type: string
+      fiscal_postal_code:
+        type: string
+      fixed_phone:
+        type: string
+      founding_date:
+        type: string
+      group_start_date:
+        type: string
+      has_stock:
+        type: boolean
+      iban:
+        type: string
       id:
         type: integer
-      request_data:
+      legal_form:
+        type: string
+      main_clients:
+        type: string
+      main_suppliers:
+        type: string
+      marital_status:
+        type: string
+      monthly_invoices:
+        type: integer
+      name:
+        type: string
+      nif:
+        type: string
+      nipc:
+        type: string
+      number_employees:
+        type: integer
+      official_email:
+        description: Preferências
+        type: string
+      phone:
+        type: string
+      preferred_contact_hours:
+        type: string
+      preferred_format:
+        type: string
+      report_frequency:
         type: string
       request_type:
         description: new_client, existing_client
@@ -286,38 +494,92 @@ definitions:
         type: integer
       reviewed_by_user:
         $ref: '#/definitions/models.User'
+      share_capital:
+        type: number
       status:
         type: string
       submitted_at:
         type: string
+      tax_residence_country:
+        type: string
+      trade_name:
+        description: Dados completos opcionais
+        type: string
       updated_at:
         type: string
       user:
-        $ref: '#/definitions/models.User'
+        allOf:
+        - $ref: '#/definitions/models.User'
+        description: Relacionamentos
       user_id:
+        description: === RELACIONAMENTOS (só existem após aprovação) ===
         type: integer
+      username:
+        description: |-
+          === DADOS DO USER (armazenados até aprovação) ===
+          Dados pessoais obrigatórios
+        type: string
+      vat_regime:
+        type: string
     type: object
   models.RegistrationRequestDTO:
     properties:
       accounting_regime:
-        description: Regimes (obrigatórios para aprovação)
-        enum:
-        - organizada
-        - simplificada
         example: organizada
         type: string
+      annual_revenue:
+        example: 100000
+        type: number
+      bank_name:
+        example: Banco Comercial Português
+        type: string
+      bic:
+        example: BCOMPTPL
+        type: string
+      billing_software:
+        example: Moloni
+        type: string
       business_activity:
-        description: Dados operacionais básicos
         example: Consultoria em gestão
         type: string
       cae:
         example: "69200"
         type: string
+      citizen_card_expiry:
+        example: "2030-12-31"
+        type: string
+      citizen_card_number:
+        example: "12345678"
+        type: string
+      company_address:
+        example: Rua das Flores, 123
+        type: string
+      company_city:
+        example: Lisboa
+        type: string
+      company_country:
+        example: Portugal
+        type: string
+      company_county:
+        example: Lisboa
+        type: string
+      company_district:
+        example: Lisboa
+        type: string
       company_name:
-        description: Dados empresa mínimos
+        description: |-
+          === DADOS EMPRESA ===
+          Obrigatórios
         example: Silva & Associados Lda
         type: string
+      company_postal_code:
+        example: 1000-001
+        type: string
+      corporate_object:
+        example: Prestação de serviços de consultoria
+        type: string
       date_of_birth:
+        description: === TODOS OS CAMPOS OPCIONAIS ===
         example: "1990-01-15"
         type: string
       email:
@@ -327,20 +589,47 @@ definitions:
         example: 50000
         type: number
       fiscal_address:
-        description: Morada fiscal mínima
+        description: Morada fiscal obrigatória
         example: Rua das Flores, 123
         type: string
       fiscal_city:
         example: Lisboa
         type: string
+      fiscal_county:
+        example: Lisboa
+        type: string
+      fiscal_district:
+        example: Lisboa
+        type: string
       fiscal_postal_code:
         example: 1000-001
+        type: string
+      fixed_phone:
+        example: "213456789"
         type: string
       founding_date:
         example: "2024-01-15"
         type: string
+      group_start_date:
+        example: "2024-01-01"
+        type: string
+      has_stock:
+        example: false
+        type: boolean
+      iban:
+        example: PT50000201231234567890154
+        type: string
       legal_form:
         example: Sociedade por Quotas
+        type: string
+      main_clients:
+        example: Cliente A, Cliente B
+        type: string
+      main_suppliers:
+        example: Fornecedor X, Fornecedor Y
+        type: string
+      marital_status:
+        example: Solteiro
         type: string
       monthly_invoices:
         example: 10
@@ -352,11 +641,15 @@ definitions:
         example: "123456789"
         type: string
       nipc:
+        description: Opcionais
         example: "123456789"
         type: string
       number_employees:
         example: 2
         type: integer
+      official_email:
+        example: geral@empresa.com
+        type: string
       password:
         example: password123
         minLength: 6
@@ -364,45 +657,45 @@ definitions:
       phone:
         example: "912345678"
         type: string
+      preferred_contact_hours:
+        example: 9h-17h
+        type: string
+      preferred_format:
+        example: digital
+        type: string
       report_frequency:
-        enum:
-        - mensal
-        - trimestral
         example: mensal
         type: string
+      share_capital:
+        example: 5000
+        type: number
+      tax_residence_country:
+        example: Portugal
+        type: string
+      trade_name:
+        example: Silva Consultoria
+        type: string
       username:
-        description: Dados pessoais mínimos
+        description: |-
+          === DADOS PESSOAIS ===
+          Obrigatórios
         example: joao.silva
         type: string
       vat_regime:
-        enum:
-        - normal
-        - isento_art53
-        - pequeno_retalhista
         example: normal
         type: string
     required:
-    - accounting_regime
-    - business_activity
-    - cae
     - company_name
-    - date_of_birth
     - email
-    - estimated_revenue
     - fiscal_address
     - fiscal_city
     - fiscal_postal_code
-    - founding_date
     - legal_form
-    - monthly_invoices
     - name
     - nif
-    - nipc
     - password
     - phone
-    - report_frequency
     - username
-    - vat_regime
     type: object
   models.SuccessResponse:
     properties:
@@ -469,11 +762,7 @@ definitions:
         example: "2023-01-01T00:00:00Z"
         type: string
       date_of_birth:
-        description: Dados pessoais completos (preenchidos depois da aprovação)
-        type: string
-      e_fatura_password:
-        type: string
-      e_fatura_user:
+        description: Dados copiados da RegistrationRequest após aprovação
         type: string
       email:
         example: joao@exemplo.com
@@ -504,35 +793,30 @@ definitions:
         example: "123456789"
         type: string
       official_email:
+        description: Acessos e credenciais (guardados encriptados)
         type: string
       phone:
         example: "912345678"
-        type: string
-      portal_financas_password:
-        type: string
-      portal_financas_user:
-        description: Acessos e credenciais (guardados encriptados)
         type: string
       preferred_contact_hours:
         type: string
       preferred_format:
         description: Preferências de comunicação
         type: string
+      registration_request:
+        $ref: '#/definitions/models.RegistrationRequest'
       report_frequency:
         type: string
-      requests:
+      reviewed_requests:
         items:
           $ref: '#/definitions/models.RegistrationRequest'
         type: array
       role:
         example: client
         type: string
-      ss_direct_password:
-        type: string
-      ss_direct_user:
-        type: string
       status:
-        example: pending
+        description: Sempre approved quando criado
+        example: approved
         type: string
       tax_residence_country:
         type: string
@@ -574,6 +858,103 @@ paths:
       summary: Aprovar/rejeitar solicitação
       tags:
       - admin
+  /admin/clients:
+    get:
+      consumes:
+      - application/json
+      description: Lista todos os clientes com status aprovado (apenas contabilista/admin)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar clientes aprovados
+      tags:
+      - admin
+  /admin/clients/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Elimina um cliente e a sua empresa (apenas contabilista/admin)
+      parameters:
+      - description: ID do cliente
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Eliminar cliente
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Atualiza dados pessoais de um cliente (apenas contabilista/admin)
+      parameters:
+      - description: ID do cliente
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Dados para atualizar
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.AdminUpdateClientDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar dados de cliente
+      tags:
+      - admin
+  /admin/clients/{id}/company:
+    put:
+      consumes:
+      - application/json
+      description: Atualiza dados da empresa de um cliente (apenas contabilista/admin)
+      parameters:
+      - description: ID do cliente
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Dados da empresa para atualizar
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.AdminUpdateCompanyDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar empresa do cliente
+      tags:
+      - admin
   /admin/pending-requests:
     get:
       consumes:
@@ -595,7 +976,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Lista todas as solicitações (apenas contabilistas/admin)
+      description: Lista todos os pedidos de registo pendentes para aprovação
       produces:
       - application/json
       responses:
@@ -605,16 +986,16 @@ paths:
             $ref: '#/definitions/models.SuccessResponse'
       security:
       - BearerAuth: []
-      summary: Histórico de solicitações
+      summary: Listar pedidos de registo pendentes
       tags:
       - admin
   /admin/requests/{id}:
     get:
       consumes:
       - application/json
-      description: Obtém detalhes completos de uma solicitação específica
+      description: Obtém detalhes completos de um pedido de registo específico
       parameters:
-      - description: ID da solicitação
+      - description: ID do pedido
         in: path
         name: id
         required: true
@@ -628,7 +1009,7 @@ paths:
             $ref: '#/definitions/models.SuccessResponse'
       security:
       - BearerAuth: []
-      summary: Detalhes de uma solicitação
+      summary: Detalhes de um pedido de registo
       tags:
       - admin
   /admin/users:
@@ -698,6 +1079,40 @@ paths:
       security:
       - BearerAuth: []
       summary: Alterar status de utilizador
+      tags:
+      - admin
+  /admin/users/count:
+    get:
+      consumes:
+      - application/json
+      description: Conta quantos utilizadores existem por status e role
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Contar utilizadores
+      tags:
+      - admin
+  /admin/users/simple:
+    get:
+      consumes:
+      - application/json
+      description: Lista utilizadores sem relacionamentos para debug
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar utilizadores (simples)
       tags:
       - admin
   /auth/login:
